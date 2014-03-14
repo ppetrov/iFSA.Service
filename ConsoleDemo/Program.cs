@@ -33,20 +33,24 @@ namespace ConsoleDemo
 
 			Thread.Sleep(50);
 
-			ThreadPool.QueueUserWorkItem(_ =>
+			for (var i = 0; i < 4; i++)
 			{
-				var h = new AutoUpdateClientRequestHandler(1);
-				var v = new ClientVersion(Platform.Metro, new Version(1, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03");
-				while (true)
+				var local = i;
+				ThreadPool.QueueUserWorkItem(_ =>
 				{
-					using (var c = new TcpClient(hostname, port))
+					var h = new AutoUpdateClientRequestHandler(1, new TransferHandler());
+					var v = new ClientVersion(Platform.Metro, new Version(1, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03");
+					while (true)
 					{
-						var package = h.DownloadServerVersion(c, v);
-						Console.WriteLine("Client bye bye " + package.Length);
-						Thread.Sleep(TimeSpan.FromSeconds(1));
+						using (var c = new TcpClient(hostname, port))
+						{
+							var package = h.DownloadServerVersion(c, v);
+							//Console.WriteLine(local + " Client bye bye " + package.Length);
+							Thread.Sleep(TimeSpan.FromSeconds(1));
+						}
 					}
-				}
-			});
+				});
+			}
 
 			WaitHandle.WaitAll(new WaitHandle[] { new ManualResetEvent(false) });
 		}

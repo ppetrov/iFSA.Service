@@ -25,9 +25,10 @@ namespace iFSA.Service.AutoUpdate
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
-			var clientVersion = new ClientVersion(this.ReadData(stream));
+			var h = new TransferHandler();
+			var clientVersion = new ClientVersion(h.ReadData(stream));
 			var updatePackage = this.GetUpdatePackage(clientVersion);
-			this.WriteData(stream, updatePackage);
+			h.WriteData(stream, updatePackage);
 		}
 
 		private byte[] GetUpdatePackage(ClientVersion clientVersion)

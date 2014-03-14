@@ -2,15 +2,16 @@
 
 namespace iFSA.Service.Core
 {
-	public abstract class ClientRequestHandler : TransferHandler
+	public abstract class ClientRequestHandler : RequestHandler
 	{
-		public byte Id { get; private set; }
+		public TransferHandler TransferHandler { get; private set; }
 
-		protected ClientRequestHandler(byte id)
+		protected ClientRequestHandler(byte id, TransferHandler transferHandler)
+			: base(id)
 		{
-			if (id <= 0) throw new ArgumentOutOfRangeException("id");
+			if (transferHandler == null) throw new ArgumentNullException("transferHandler");
 
-			this.Id = id;
+			this.TransferHandler = transferHandler;
 		}
 	}
 }

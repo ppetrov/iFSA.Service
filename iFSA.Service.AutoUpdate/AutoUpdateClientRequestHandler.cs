@@ -6,11 +6,13 @@ namespace iFSA.Service.AutoUpdate
 {
 	public sealed class AutoUpdateClientRequestHandler : ClientRequestHandler
 	{
-		public AutoUpdateClientRequestHandler(byte id)
-			: base(id)
+		public AutoUpdateClientRequestHandler(byte id, TransferHandler transferHandler)
+			: base(id, transferHandler)
 		{
+#if DEBUG
 			this.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
 			this.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
+#endif
 		}
 
 		public byte[] DownloadServerVersion(TcpClient client, ClientVersion version)
@@ -22,12 +24,12 @@ namespace iFSA.Service.AutoUpdate
 
 			using (var s = client.GetStream())
 			{
-				this.Write(s, this.Id);
-				this.WriteData(s, version.GetNetworkBuffer());
+				this.TransferHandler.Write(s, this.Id);
+				this.TransferHandler.WriteData(s, version.GetNetworkBuffer());
 
-				data = this.ReadData(s);
+				data = this.TransferHandler.ReadData(s);
 
-				this.WriteClose(s);
+				this.TransferHandler.WriteClose(s);
 			}
 
 

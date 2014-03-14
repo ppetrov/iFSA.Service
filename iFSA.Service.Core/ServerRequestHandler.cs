@@ -2,7 +2,7 @@
 
 namespace iFSA.Service.Core
 {
-	public abstract class ServerRequestHandler : ClientRequestHandler
+	public abstract class ServerRequestHandler : RequestHandler
 	{
 		protected ServerRequestHandler(byte id)
 			: base(id)

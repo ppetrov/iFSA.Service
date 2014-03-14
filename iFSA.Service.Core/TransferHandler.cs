@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace iFSA.Service.Core
 {
-	public abstract class TransferHandler
+	public class TransferHandler
 	{
 		private readonly byte[] _buffer = new byte[16 * 1024];
 		private readonly byte[] _byteBuffer = new byte[1];
@@ -28,7 +28,7 @@ namespace iFSA.Service.Core
 			if (handler != null) handler(this, e);
 		}
 
-		protected TransferHandler()
+		public TransferHandler()
 		{
 			this.EnableCompression = true;
 		}
