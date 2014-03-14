@@ -1,0 +1,38 @@
+﻿using System;
+using System.Net.Sockets;
+using iFSA.Service.Core;
+
+namespace iFSA.Service.AutoUpdate
+{
+	public sealed class AutoUpdateClientRequestHandler : ClientRequestHandler
+	{
+		public AutoUpdateClientRequestHandler(byte id)
+			: base(id)
+		{
+			this.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
+			this.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
+		}
+
+		public byte[] DownloadServerVersion(TcpClient client, ClientVersion version)
+		{
+			if (client == null) throw new ArgumentNullException("client");
+			if (version == null) throw new ArgumentNullException("version");
+
+			byte[] data;
+
+			using (var s = client.GetStream())
+			{
+				this.Write(s, this.Id);
+				this.WriteData(s, version.GetNetworkBuffer());
+
+				data = this.ReadData(s);
+
+				this.WriteClose(s);
+			}
+
+
+
+			return data;
+		}
+	}
+}

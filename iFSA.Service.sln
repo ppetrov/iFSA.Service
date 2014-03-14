@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30110.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iFSA.Service.Core", "iFSA.Service.Core\iFSA.Service.Core.csproj", "{CFA78E2A-04A9-4537-9B3B-8A5D142F585B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iFSA.Service.AutoUpdate", "iFSA.Service.AutoUpdate\iFSA.Service.AutoUpdate.csproj", "{4CAB1689-BC6B-4FDE-B367-A810108C61E4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleDemo", "ConsoleDemo\ConsoleDemo.csproj", "{CF33DB12-E13B-4DDF-A4B6-88B511104976}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CFA78E2A-04A9-4537-9B3B-8A5D142F585B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CFA78E2A-04A9-4537-9B3B-8A5D142F585B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CFA78E2A-04A9-4537-9B3B-8A5D142F585B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CFA78E2A-04A9-4537-9B3B-8A5D142F585B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4CAB1689-BC6B-4FDE-B367-A810108C61E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CAB1689-BC6B-4FDE-B367-A810108C61E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4CAB1689-BC6B-4FDE-B367-A810108C61E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4CAB1689-BC6B-4FDE-B367-A810108C61E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF33DB12-E13B-4DDF-A4B6-88B511104976}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF33DB12-E13B-4DDF-A4B6-88B511104976}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF33DB12-E13B-4DDF-A4B6-88B511104976}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF33DB12-E13B-4DDF-A4B6-88B511104976}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
