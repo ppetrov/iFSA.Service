@@ -4,7 +4,7 @@ using System.IO.Compression;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace iFSA.Service.Core
+namespace iFSA.Server.Core
 {
 	public class TransferHandler
 	{

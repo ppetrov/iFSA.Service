@@ -1,4 +1,4 @@
-﻿namespace iFSA.Service.AutoUpdate
+﻿namespace iFSA.Server.AutoUpdate
 {
 	public enum Platform
 	{

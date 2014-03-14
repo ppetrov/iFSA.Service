@@ -1,6 +1,6 @@
 ﻿using System.Net.Sockets;
 
-namespace iFSA.Service.Core
+namespace iFSA.Server.Core
 {
 	public abstract class ServerRequestHandler : RequestHandler
 	{

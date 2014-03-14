@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace iFSA.Service.AutoUpdate
+namespace iFSA.Server.AutoUpdate
 {
 	public sealed class ClientVersion
 	{

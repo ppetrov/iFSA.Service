@@ -4,7 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
-namespace iFSA.Service.Core
+namespace iFSA.Server.Core
 {
 	public sealed class Server
 	{

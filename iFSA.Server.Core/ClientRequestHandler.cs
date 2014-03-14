@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace iFSA.Service.Core
+namespace iFSA.Server.Core
 {
 	public abstract class ClientRequestHandler : RequestHandler
 	{

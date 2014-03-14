@@ -43,13 +43,13 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\iFSA.Service.AutoUpdate\iFSA.Service.AutoUpdate.csproj">
+    <ProjectReference Include="..\iFSA.Server.AutoUpdate\iFSA.Server.AutoUpdate.csproj">
       <Project>{4CAB1689-BC6B-4FDE-B367-A810108C61E4}</Project>
-      <Name>iFSA.Service.AutoUpdate</Name>
+      <Name>iFSA.Server.AutoUpdate</Name>
     </ProjectReference>
-    <ProjectReference Include="..\iFSA.Service.Core\iFSA.Service.Core.csproj">
+    <ProjectReference Include="..\iFSA.Server.Core\iFSA.Server.Core.csproj">
       <Project>{CFA78E2A-04A9-4537-9B3B-8A5D142F585B}</Project>
-      <Name>iFSA.Service.Core</Name>
+      <Name>iFSA.Server.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

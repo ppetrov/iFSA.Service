@@ -3,8 +3,8 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using iFSA.Service.AutoUpdate;
-using iFSA.Service.Core;
+using iFSA.Server.AutoUpdate;
+using iFSA.Server.Core;
 
 namespace ConsoleDemo
 {

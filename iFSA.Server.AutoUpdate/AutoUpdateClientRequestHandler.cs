@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Net.Sockets;
-using iFSA.Service.Core;
+using iFSA.Server.Core;
 
-namespace iFSA.Service.AutoUpdate
+namespace iFSA.Server.AutoUpdate
 {
 	public sealed class AutoUpdateClientRequestHandler : ClientRequestHandler
 	{
