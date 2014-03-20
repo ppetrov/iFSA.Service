@@ -34,8 +34,10 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AutoUpdateClientRequestHandler.cs" />
-    <Compile Include="AutoUpdateServerRequestHandler.cs" />
+    <Compile Include="AppVersion.cs" />
+    <Compile Include="ClientRequestHandler.cs" />
+    <Compile Include="Function.cs" />
+    <Compile Include="ServerRequestHandler.cs" />
     <Compile Include="ClientVersion.cs" />
     <Compile Include="PackageHelper.cs" />
     <Compile Include="Platform.cs" />

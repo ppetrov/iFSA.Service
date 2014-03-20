@@ -3,42 +3,60 @@ using System.IO;
 
 namespace iFSA.Server.AutoUpdate
 {
-	public sealed class ServerVersion
+	public sealed class ServerVersion : AppVersion
 	{
-		private byte[] _data;
+		public byte[] Package { get; private set; }
 
-		public Version Version { get; private set; }
-		public FileInfo Package { get; private set; }
-
-		public ServerVersion(Version version, FileInfo package)
+		public ServerVersion(Platform platform, Version version, byte[] package)
+			: base(platform, version)
 		{
-			if (version == null) throw new ArgumentNullException("version");
 			if (package == null) throw new ArgumentNullException("package");
 
-			this.Version = version;
 			this.Package = package;
 		}
 
-		public byte[] GetPackageBuffer()
+		public ServerVersion(byte[] input)
+			: base(Platform.Ipad, new Version())
 		{
-			if (_data == null)
-			{
-				using (var ms = new MemoryStream((int)this.Package.Length))
-				{
-					using (var fs = this.Package.OpenRead())
-					{
-						var buffer = new byte[16 * 4 * 1024];
+			if (input == null) throw new ArgumentNullException("input");
 
-						int readBytes;
-						while ((readBytes = fs.Read(buffer, 0, buffer.Length)) != 0)
-						{
-							ms.Write(buffer, 0, readBytes);
-						}
-					}
-					_data = ms.GetBuffer();
-				}
+			this.Setup(input);
+
+			this.Package = new byte[input.Length - 20];
+			Array.Copy(input, 20, this.Package, 0, this.Package.Length);
+		}
+
+		public byte[] GetNetworkBuffer(bool includeData = true)
+		{
+			var capacity = 20;
+			if (includeData)
+			{
+				capacity += this.Package.Length;
 			}
-			return _data;
+			using (var ms = new MemoryStream(capacity))
+			{
+				var buffer = BitConverter.GetBytes((int)this.Platform);
+				ms.Write(buffer, 0, buffer.Length);
+
+				buffer = BitConverter.GetBytes(this.Version.Major);
+				ms.Write(buffer, 0, buffer.Length);
+
+				buffer = BitConverter.GetBytes(this.Version.Minor);
+				ms.Write(buffer, 0, buffer.Length);
+
+				buffer = BitConverter.GetBytes(this.Version.Build);
+				ms.Write(buffer, 0, buffer.Length);
+
+				buffer = BitConverter.GetBytes(this.Version.Revision);
+				ms.Write(buffer, 0, buffer.Length);
+
+				if (includeData)
+				{
+					ms.Write(this.Package, 0, this.Package.Length);
+				}
+
+				return ms.GetBuffer();
+			}
 		}
 	}
 }

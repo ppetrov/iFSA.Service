@@ -8,6 +8,8 @@ namespace iFSA.Server.Core
 {
 	public class TransferHandler
 	{
+		public static readonly byte[] NoData = BitConverter.GetBytes(-1);
+
 		private readonly byte[] _buffer = new byte[16 * 1024];
 		private readonly byte[] _byteBuffer = new byte[1];
 		private readonly byte[] _sizeBuffer = BitConverter.GetBytes(Convert.ToInt32(0));
@@ -33,19 +35,20 @@ namespace iFSA.Server.Core
 			this.EnableCompression = true;
 		}
 
-		public void Write(NetworkStream stream, byte handlerId)
+		public void Write(NetworkStream stream, byte handlerId, byte functionId)
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 			if (handlerId <= 0) throw new ArgumentOutOfRangeException("stream");
 
 			stream.WriteByte(handlerId);
+			stream.WriteByte(functionId);
 		}
 
 		public void WriteClose(NetworkStream stream)
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
-			this.Write(stream, byte.MaxValue);
+			stream.WriteByte(byte.MaxValue);
 		}
 
 		public void WriteData(NetworkStream stream, byte[] input)
@@ -247,7 +250,7 @@ namespace iFSA.Server.Core
 					using (var zipStream = new GZipStream(input, CompressionMode.Decompress))
 					{
 						int readBytes;
-						while ((readBytes = zipStream.Read(_buffer, 0, _buffer.Length)) > 0)
+						while ((readBytes = zipStream.Read(_buffer, 0, _buffer.Length)) != 0)
 						{
 							output.Write(_buffer, 0, readBytes);
 						}

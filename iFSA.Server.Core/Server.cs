@@ -11,7 +11,7 @@ namespace iFSA.Server.Core
 		private int _clients;
 		private bool _isRunning;
 		private readonly TcpListener _listener;
-		private readonly Dictionary<byte, ServerRequestHandler> _handlers = new Dictionary<byte, ServerRequestHandler>();
+		private readonly Dictionary<byte, ServerRequestHandlerBase> _handlers = new Dictionary<byte, ServerRequestHandlerBase>();
 
 		public int Clients
 		{
@@ -25,7 +25,7 @@ namespace iFSA.Server.Core
 			_listener = new TcpListener(address, port);
 		}
 
-		public void Add(ServerRequestHandler requestHandler)
+		public void Add(ServerRequestHandlerBase requestHandler)
 		{
 			if (requestHandler == null) throw new ArgumentNullException("requestHandler");
 
@@ -77,8 +77,14 @@ namespace iFSA.Server.Core
 						var value = s.ReadByte();
 						if (value != -1)
 						{
-							_handlers[(byte)value].Handle(s);
-							s.ReadByte();
+							var handleId = (byte)value;
+							value = s.ReadByte();
+							if (value != -1)
+							{
+								var functionId = (byte)value;
+								_handlers[handleId].Execute(s, functionId);
+								s.ReadByte();
+							}
 						}
 					}
 				}

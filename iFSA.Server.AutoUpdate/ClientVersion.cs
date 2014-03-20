@@ -4,37 +4,29 @@ using System.Text;
 
 namespace iFSA.Server.AutoUpdate
 {
-	public sealed class ClientVersion
+	public sealed class ClientVersion : AppVersion
 	{
-		public Platform Platform { get; private set; }
-		public Version Version { get; private set; }
 		public string Username { get; private set; }
 		public string Password { get; private set; }
 
 		public ClientVersion(Platform platform, Version version, string username, string password)
+			: base(platform, version)
 		{
-			if (version == null) throw new ArgumentNullException("version");
 			if (username == null) throw new ArgumentNullException("username");
 			if (password == null) throw new ArgumentNullException("password");
 
-			this.Platform = platform;
-			this.Version = version;
 			this.Username = username;
 			this.Password = password;
 		}
 
-		public ClientVersion(byte[] bytes)
+		public ClientVersion(byte[] input)
+			: base(Platform.Ipad, new Version())
 		{
-			this.Platform = (Platform)BitConverter.ToInt32(bytes, 0);
-			this.Version = new Version(
-				BitConverter.ToInt32(bytes, 4),
-				BitConverter.ToInt32(bytes, 8),
-				BitConverter.ToInt32(bytes, 12),
-				BitConverter.ToInt32(bytes, 16));
-			var userDataLength = BitConverter.ToInt32(bytes, 20);
-			this.Username = Encoding.Unicode.GetString(bytes, 24, userDataLength);
-			var passDataLength = BitConverter.ToInt32(bytes, 24 + userDataLength);
-			this.Password = Encoding.Unicode.GetString(bytes, 28 + userDataLength, passDataLength);
+			this.Setup(input);
+			var userDataLength = BitConverter.ToInt32(input, 20);
+			this.Username = Encoding.Unicode.GetString(input, 24, userDataLength);
+			var passDataLength = BitConverter.ToInt32(input, 24 + userDataLength);
+			this.Password = Encoding.Unicode.GetString(input, 28 + userDataLength, passDataLength);
 		}
 
 		public byte[] GetNetworkBuffer()
