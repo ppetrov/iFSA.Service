@@ -7,8 +7,8 @@
     <ProjectGuid>{CFA78E2A-04A9-4537-9B3B-8A5D142F585B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>iFSA.Server.Core</RootNamespace>
-    <AssemblyName>iFSA.Server.Core</AssemblyName>
+    <RootNamespace>iFSA.Server</RootNamespace>
+    <AssemblyName>iFSA.Server</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -34,6 +34,14 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AutoUpdate\AppVersion.cs" />
+    <Compile Include="AutoUpdate\ClientRequestHandler.cs" />
+    <Compile Include="AutoUpdate\ClientVersion.cs" />
+    <Compile Include="AutoUpdate\Function.cs" />
+    <Compile Include="AutoUpdate\PackageHelper.cs" />
+    <Compile Include="AutoUpdate\Platform.cs" />
+    <Compile Include="AutoUpdate\ServerRequestHandler.cs" />
+    <Compile Include="AutoUpdate\ServerVersion.cs" />
     <Compile Include="ClientRequestHandlerBase.cs" />
     <Compile Include="ExceptionLogHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

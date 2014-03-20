@@ -65,8 +65,15 @@ namespace ConsoleDemo
 			var h = new ClientRequestHandler(1, new TransferHandler());
 			using (var c = new TcpClient(hostname, port))
 			{
-				var package = h.GetVersion(c, platform) ?? new Version();
-				Console.WriteLine(package);
+				var package = h.GetVersion(c, platform);
+				if (package != null)
+				{
+					Console.WriteLine(package);
+				}
+				else
+				{
+					Console.WriteLine(@"No version is available");
+				}
 			}
 
 			Thread.Sleep(1000);

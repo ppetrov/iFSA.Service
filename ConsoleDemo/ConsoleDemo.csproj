@@ -43,13 +43,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\iFSA.Server.AutoUpdate\iFSA.Server.AutoUpdate.csproj">
-      <Project>{4CAB1689-BC6B-4FDE-B367-A810108C61E4}</Project>
-      <Name>iFSA.Server.AutoUpdate</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\iFSA.Server.Core\iFSA.Server.Core.csproj">
+    <ProjectReference Include="..\iFSA.Server.Core\iFSA.Server.csproj">
       <Project>{CFA78E2A-04A9-4537-9B3B-8A5D142F585B}</Project>
-      <Name>iFSA.Server.Core</Name>
+      <Name>iFSA.Server</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
