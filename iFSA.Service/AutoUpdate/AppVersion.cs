@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace iFSA.Server.AutoUpdate
+namespace iFSA.Service.AutoUpdate
 {
 	public abstract class AppVersion
 	{

@@ -4,14 +4,14 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
-namespace iFSA.Server
+namespace iFSA.Service
 {
 	public sealed class Server
 	{
 		private int _clients;
 		private bool _isRunning;
 		private readonly TcpListener _listener;
-		private readonly Dictionary<byte, ServerRequestHandlerBase> _handlers = new Dictionary<byte, ServerRequestHandlerBase>();
+		private readonly Dictionary<byte, ServerHandlerBase> _handlers = new Dictionary<byte, ServerHandlerBase>();
 
 		public int Clients
 		{
@@ -25,11 +25,11 @@ namespace iFSA.Server
 			_listener = new TcpListener(address, port);
 		}
 
-		public void Register(ServerRequestHandlerBase requestHandler)
+		public void Register(ServerHandlerBase handler)
 		{
-			if (requestHandler == null) throw new ArgumentNullException("requestHandler");
+			if (handler == null) throw new ArgumentNullException("handler");
 
-			_handlers.Add(requestHandler.Id, requestHandler);
+			_handlers.Add(handler.Id, handler);
 		}
 
 		public void Start()

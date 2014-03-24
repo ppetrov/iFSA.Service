@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Net.Sockets;
 
-namespace iFSA.Server.AutoUpdate
+namespace iFSA.Service.AutoUpdate
 {
-	public sealed class ClientRequestHandler : ClientRequestHandlerBase
+	public sealed class ClientHandler : ClientHandlerBase
 	{
-		public ClientRequestHandler(byte id, TransferHandler transferHandler)
+		public ClientHandler(byte id, TransferHandler transferHandler)
 			: base(id, transferHandler)
 		{
 #if DEBUG

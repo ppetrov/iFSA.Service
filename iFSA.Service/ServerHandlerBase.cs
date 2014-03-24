@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Net.Sockets;
 
-namespace iFSA.Server
+namespace iFSA.Service
 {
-	public abstract class ServerRequestHandlerBase
+	public abstract class ServerHandlerBase
 	{
 		public byte Id { get; private set; }
 
-		protected ServerRequestHandlerBase(byte id)
+		protected ServerHandlerBase(byte id)
 		{
 			if (id <= 0) throw new ArgumentOutOfRangeException("id");
 

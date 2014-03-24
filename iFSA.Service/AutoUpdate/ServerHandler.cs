@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Net.Sockets;
 
-namespace iFSA.Server.AutoUpdate
+namespace iFSA.Service.AutoUpdate
 {
-	public sealed class ServerRequestHandler : ServerRequestHandlerBase
+	public sealed class ServerHandler : ServerHandlerBase
 	{
 		private readonly ServerVersion[] _versions = new ServerVersion[3];
 
-		public ServerRequestHandler(byte id)
+		public ServerHandler(byte id)
 			: base(id)
 		{
 		}

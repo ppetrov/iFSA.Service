@@ -4,8 +4,8 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using iFSA.Server;
-using iFSA.Server.AutoUpdate;
+using iFSA.Service;
+using iFSA.Service.AutoUpdate;
 
 namespace ConsoleDemo
 {
@@ -50,7 +50,7 @@ namespace ConsoleDemo
 				try
 				{
 					var s = new Server(IPAddress.Parse(hostname), port);
-					s.Register(new ServerRequestHandler(1));
+					s.Register(new ServerHandler(1));
 					s.Start();
 				}
 				catch (Exception ex)
@@ -62,7 +62,7 @@ namespace ConsoleDemo
 			Thread.Sleep(1000);
 			var platform = Platform.Metro;
 			Console.WriteLine(@"Get version for " + platform);
-			var h = new ClientRequestHandler(1, new TransferHandler());
+			var h = new ClientHandler(1, new TransferHandler());
 			using (var c = new TcpClient(hostname, port))
 			{
 				var package = h.GetVersion(c, platform);
@@ -139,7 +139,7 @@ namespace ConsoleDemo
 			//	var local = i;
 			//	ThreadPool.QueueUserWorkItem(_ =>
 			//	{
-			//		var h = new ClientRequestHandler(1, new TransferHandler());
+			//		var h = new ClientHandler(1, new TransferHandler());
 			//		var v = new ClientVersion(Platform.Metro, new Version(1, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03");
 			//		while (true)
 			//		{

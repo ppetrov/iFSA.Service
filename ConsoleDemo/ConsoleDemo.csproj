@@ -43,9 +43,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\iFSA.Server.Core\iFSA.Server.csproj">
+    <ProjectReference Include="..\iFSA.Service\iFSA.Service.csproj">
       <Project>{CFA78E2A-04A9-4537-9B3B-8A5D142F585B}</Project>
-      <Name>iFSA.Server</Name>
+      <Name>iFSA.Service</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

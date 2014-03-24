@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace iFSA.Server.AutoUpdate
+namespace iFSA.Service.AutoUpdate
 {
 	public sealed class ServerVersion : AppVersion
 	{
