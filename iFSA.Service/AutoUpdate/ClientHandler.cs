@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace iFSA.Service.AutoUpdate
 {
 	public sealed class ClientHandler : ClientHandlerBase
 	{
-		public ClientHandler(byte id, TransferHandler transferHandler)
-			: base(id, transferHandler)
+		public ClientHandler(byte id)
+			: base(id, new TransferHandler { EnableCompression = false })
 		{
 #if DEBUG
 			this.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
@@ -14,71 +15,55 @@ namespace iFSA.Service.AutoUpdate
 #endif
 		}
 
-		public byte[] DownloadVersion(TcpClient client, ClientVersion version)
+		public async Task<byte[]> DownloadVersionAsync(TcpClient client, ClientVersion version)
 		{
 			if (client == null) throw new ArgumentNullException("client");
 			if (version == null) throw new ArgumentNullException("version");
 
 			using (var s = client.GetStream())
 			{
-				try
-				{
-					this.TransferHandler.Write(s, this.Id, (byte)Function.DownloadVersion);
-					this.TransferHandler.WriteData(s, version.GetNetworkBuffer());
+				await this.TransferHandler.WriteFuncAsync(s, this.Id, (byte)Function.DownloadVersion);
+				await this.TransferHandler.WriteDataAsync(s, version.GetNetworkBuffer());
 
-					var data = this.TransferHandler.ReadData(s);
-					if (data.Length == TransferHandler.NoData.Length)
-					{
-						data = null;
-					}
+				var data = await this.TransferHandler.ReadDataAsync(s);
+				await this.TransferHandler.WriteCloseAsync(s);
+
+				if (data.Length != TransferHandler.NoData.Length)
+				{
 					return data;
 				}
-				finally
-				{
-					this.TransferHandler.WriteClose(s);
-				}
 			}
+
+			return null;
 		}
 
-		public void PublishVersion(TcpClient client, ServerVersion version)
+		public async Task PublishVersionAsync(TcpClient client, ServerVersion version)
 		{
 			if (client == null) throw new ArgumentNullException("client");
 			if (version == null) throw new ArgumentNullException("version");
 
 			using (var s = client.GetStream())
 			{
-				try
-				{
-					this.TransferHandler.Write(s, this.Id, (byte)Function.PublishVersion);
-					this.TransferHandler.WriteData(s, version.GetNetworkBuffer());
-				}
-				finally
-				{
-					this.TransferHandler.WriteClose(s);
-				}
+				await this.TransferHandler.WriteFuncAsync(s, this.Id, (byte)Function.PublishVersion);
+				await this.TransferHandler.WriteDataAsync(s, await this.TransferHandler.CompressAsync(await version.GetNetworkBufferAsync()));
+				await this.TransferHandler.WriteCloseAsync(s);
 			}
 		}
 
-		public Version GetVersion(TcpClient client, Platform platform)
+		public async Task<Version> GetVersionAsync(TcpClient client, Platform platform)
 		{
 			if (client == null) throw new ArgumentNullException("client");
 
 			using (var s = client.GetStream())
 			{
-				try
-				{
-					this.TransferHandler.Write(s, this.Id, (byte)Function.GetVersion);
-					this.TransferHandler.WriteData(s, BitConverter.GetBytes((int)platform));
+				await this.TransferHandler.WriteFuncAsync(s, this.Id, (byte)Function.GetVersion);
+				await this.TransferHandler.WriteDataAsync(s, BitConverter.GetBytes((int)platform));
+				var data = await this.TransferHandler.ReadDataAsync(s);
+				await this.TransferHandler.WriteCloseAsync(s);
 
-					var data = this.TransferHandler.ReadData(s);
-					if (data.Length != TransferHandler.NoData.Length)
-					{
-						return new ServerVersion(data).Version;
-					}
-				}
-				finally
+				if (data.Length != TransferHandler.NoData.Length)
 				{
-					this.TransferHandler.WriteClose(s);
+					return new ServerVersion(data).Version;
 				}
 			}
 

@@ -35,48 +35,72 @@ namespace iFSA.Service
 			this.EnableCompression = true;
 		}
 
-		public void Write(NetworkStream stream, byte handlerId, byte functionId)
+		public async Task<byte[]> CompressAsync(byte[] data)
+		{
+			if (data == null) throw new ArgumentNullException("data");
+
+			return await Task.Run(() =>
+			{
+				using (var input = new MemoryStream(data))
+				{
+					using (var output = new MemoryStream())
+					{
+						using (var zipStream = new GZipStream(output, CompressionMode.Compress))
+						{
+							int readBytes;
+							while ((readBytes = input.Read(_buffer, 0, _buffer.Length)) != 0)
+							{
+								zipStream.Write(_buffer, 0, readBytes);
+							}
+						}
+						return output.ToArray();
+					}
+				}
+			}).ConfigureAwait(false);
+		}
+
+		public async Task<byte[]> DecompressAsync(byte[] data)
+		{
+			if (data == null) throw new ArgumentNullException("data");
+
+			return await Task.Run(() =>
+			{
+				using (var input = new MemoryStream(data))
+				{
+					using (var output = new MemoryStream())
+					{
+						using (var zipStream = new GZipStream(input, CompressionMode.Decompress))
+						{
+							int readBytes;
+							while ((readBytes = zipStream.Read(_buffer, 0, _buffer.Length)) != 0)
+							{
+								output.Write(_buffer, 0, readBytes);
+							}
+						}
+						return output.ToArray();
+					}
+				}
+			}).ConfigureAwait(false);
+		}
+
+		public async Task WriteFuncAsync(NetworkStream stream, byte handlerId, byte functionId)
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 			if (handlerId <= 0) throw new ArgumentOutOfRangeException("stream");
 
-			stream.WriteByte(handlerId);
-			stream.WriteByte(functionId);
+			_byteBuffer[0] = handlerId;
+			await stream.WriteAsync(_byteBuffer, 0, _byteBuffer.Length);
+
+			_byteBuffer[0] = functionId;
+			await stream.WriteAsync(_byteBuffer, 0, _byteBuffer.Length);
 		}
 
-		public void WriteClose(NetworkStream stream)
+		public async Task WriteCloseAsync(NetworkStream stream)
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
-			stream.WriteByte(byte.MaxValue);
-		}
-
-		public void WriteData(NetworkStream stream, byte[] input)
-		{
-			if (stream == null) throw new ArgumentNullException("stream");
-			if (input == null) throw new ArgumentNullException("input");
-			if (input.Length == 0) throw new ArgumentOutOfRangeException("input");
-
-			this.OnWriteProgress(this.GetProgressPercent(0));
-
-			var data = this.Compress(input);
-
-			// Write packet size
-			var dataSize = data.Length;
-			var size = BitConverter.GetBytes(Convert.ToInt32(dataSize));
-			stream.Write(size, 0, size.Length);
-
-			// Write data
-			var bufferLength = _buffer.Length;
-			var parts = (dataSize / bufferLength) * bufferLength;
-			for (var i = 0; i < parts; i += bufferLength)
-			{
-				stream.Write(data, i, bufferLength);
-				this.OnWriteProgress(this.GetProgressPercent(dataSize, i + bufferLength));
-			}
-
-			stream.Write(data, parts, dataSize % bufferLength);
-			this.OnWriteProgress(this.GetProgressPercent(dataSize, dataSize));
+			_byteBuffer[0] = byte.MaxValue;
+			await stream.WriteAsync(_byteBuffer, 0, _byteBuffer.Length);
 		}
 
 		public async Task WriteDataAsync(NetworkStream stream, byte[] input)
@@ -87,7 +111,11 @@ namespace iFSA.Service
 
 			this.OnWriteProgress(this.GetProgressPercent(0));
 
-			var data = await this.CompressAsync(input);
+			var data = input;
+			if (this.EnableCompression)
+			{
+				data = await this.CompressAsync(data);
+			}
 
 			// Write packet size
 			var dataSize = data.Length;
@@ -105,41 +133,6 @@ namespace iFSA.Service
 
 			await stream.WriteAsync(data, parts, dataSize % bufferLength);
 			this.OnWriteProgress(this.GetProgressPercent(dataSize, dataSize));
-		}
-
-		public byte[] ReadData(NetworkStream stream)
-		{
-			if (stream == null) throw new ArgumentNullException("stream");
-
-			this.OnReadProgress(this.GetProgressPercent(0));
-
-			// Read size
-			var index = 0;
-			while (index != _sizeBuffer.Length && (stream.Read(_byteBuffer, 0, _byteBuffer.Length)) != 0)
-			{
-				_sizeBuffer[index++] = _byteBuffer[0];
-			}
-			var dataSize = BitConverter.ToInt32(_sizeBuffer, 0);
-
-			// Read data
-			using (var ms = new MemoryStream(dataSize))
-			{
-				var length = _buffer.Length;
-				for (var i = 0; i < (dataSize / length) * length; i += length)
-				{
-					this.ReadData(stream, _buffer, length);
-					ms.Write(_buffer, 0, length);
-					this.OnReadProgress(this.GetProgressPercent(dataSize, i + length));
-				}
-				var remaining = dataSize % length;
-				if (remaining != 0)
-				{
-					this.ReadData(stream, _buffer, remaining);
-					ms.Write(_buffer, 0, remaining);
-					this.OnReadProgress(this.GetProgressPercent(dataSize, dataSize));
-				}
-				return this.Decompress(ms.GetBuffer());
-			}
 		}
 
 		public async Task<byte[]> ReadDataAsync(NetworkStream stream)
@@ -173,23 +166,12 @@ namespace iFSA.Service
 					await ms.WriteAsync(_buffer, 0, remaining);
 					this.OnReadProgress(this.GetProgressPercent(dataSize, dataSize));
 				}
-				return await this.DecompressAsync(ms.GetBuffer());
-			}
-		}
-
-		private void ReadData(Stream stream, byte[] buffer, int count)
-		{
-			var offset = 0;
-
-			int readBytes;
-			while ((readBytes = stream.Read(buffer, offset, count)) != 0)
-			{
-				count -= readBytes;
-				if (count == 0)
+				var input = ms.GetBuffer();
+				if (this.EnableCompression)
 				{
-					return;
+					return await this.DecompressAsync(input);
 				}
-				offset += readBytes;
+				return input;
 			}
 		}
 
@@ -207,62 +189,6 @@ namespace iFSA.Service
 				}
 				offset += readBytes;
 			}
-		}
-
-		private byte[] Compress(byte[] data)
-		{
-			if (!this.EnableCompression)
-			{
-				return data;
-			}
-			using (var input = new MemoryStream(data))
-			{
-				using (var output = new MemoryStream())
-				{
-					using (var zipStream = new GZipStream(output, CompressionMode.Compress))
-					{
-						int readBytes;
-						while ((readBytes = input.Read(_buffer, 0, _buffer.Length)) != 0)
-						{
-							zipStream.Write(_buffer, 0, readBytes);
-						}
-					}
-					return output.ToArray();
-				}
-			}
-		}
-
-		private Task<byte[]> CompressAsync(byte[] data)
-		{
-			return !this.EnableCompression ? Task.FromResult(data) : Task.Run(() => this.Compress(data));
-		}
-
-		private byte[] Decompress(byte[] data)
-		{
-			if (!this.EnableCompression)
-			{
-				return data;
-			}
-			using (var input = new MemoryStream(data))
-			{
-				using (var output = new MemoryStream())
-				{
-					using (var zipStream = new GZipStream(input, CompressionMode.Decompress))
-					{
-						int readBytes;
-						while ((readBytes = zipStream.Read(_buffer, 0, _buffer.Length)) != 0)
-						{
-							output.Write(_buffer, 0, readBytes);
-						}
-					}
-					return output.ToArray();
-				}
-			}
-		}
-
-		private Task<byte[]> DecompressAsync(byte[] data)
-		{
-			return !this.EnableCompression ? Task.FromResult(data) : Task.Run(() => this.Decompress(data));
 		}
 
 		private decimal GetProgressPercent(decimal value)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace iFSA.Service
 {
@@ -14,6 +15,6 @@ namespace iFSA.Service
 			this.Id = id;
 		}
 
-		public abstract void Process(NetworkStream stream, byte functionId);
+		public abstract Task ProcessAsync(NetworkStream networkStream, byte functionId);
 	}
 }

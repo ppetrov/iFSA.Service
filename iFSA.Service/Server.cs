@@ -2,21 +2,15 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace iFSA.Service
 {
 	public sealed class Server
 	{
-		private int _clients;
 		private bool _isRunning;
 		private readonly TcpListener _listener;
 		private readonly Dictionary<byte, ServerHandlerBase> _handlers = new Dictionary<byte, ServerHandlerBase>();
-
-		public int Clients
-		{
-			get { return _clients; }
-		}
 
 		public Server(IPAddress address, int port)
 		{
@@ -32,7 +26,7 @@ namespace iFSA.Service
 			_handlers.Add(handler.Id, handler);
 		}
 
-		public void Start()
+		public async Task StartAsync()
 		{
 			try
 			{
@@ -41,8 +35,7 @@ namespace iFSA.Service
 
 				while (_isRunning)
 				{
-					var client = _listener.AcceptTcpClient();
-					ThreadPool.QueueUserWorkItem(this.Handle, client);
+					this.ProcessAsync(await _listener.AcceptTcpClientAsync());
 				}
 			}
 			catch (SocketException) { }
@@ -62,15 +55,13 @@ namespace iFSA.Service
 			_listener.Stop();
 		}
 
-		private void Handle(object _)
+		private async void ProcessAsync(TcpClient client)
 		{
 			try
 			{
-				Interlocked.Increment(ref _clients);
-
-				using (var c = _ as TcpClient)
+				using (client)
 				{
-					using (var s = c.GetStream())
+					using (var s = client.GetStream())
 					{
 						s.ReadTimeout = (int)TimeSpan.FromSeconds(45).TotalMilliseconds;
 
@@ -82,7 +73,7 @@ namespace iFSA.Service
 							if (value != -1)
 							{
 								var functionId = (byte)value;
-								_handlers[handleId].Process(s, functionId);
+								await _handlers[handleId].ProcessAsync(s, functionId);
 								s.ReadByte();
 							}
 						}
@@ -92,10 +83,6 @@ namespace iFSA.Service
 			catch (Exception ex)
 			{
 				ex.Log();
-			}
-			finally
-			{
-				Interlocked.Decrement(ref _clients);
 			}
 		}
 	}

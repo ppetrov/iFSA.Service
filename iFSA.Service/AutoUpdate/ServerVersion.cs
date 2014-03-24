@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace iFSA.Service.AutoUpdate
 {
@@ -26,7 +27,7 @@ namespace iFSA.Service.AutoUpdate
 			Array.Copy(input, 20, this.Package, 0, this.Package.Length);
 		}
 
-		public byte[] GetNetworkBuffer(bool includeData = true)
+		public async Task<byte[]> GetNetworkBufferAsync(bool includeData = true)
 		{
 			var capacity = 20;
 			if (includeData)
@@ -36,23 +37,23 @@ namespace iFSA.Service.AutoUpdate
 			using (var ms = new MemoryStream(capacity))
 			{
 				var buffer = BitConverter.GetBytes((int)this.Platform);
-				ms.Write(buffer, 0, buffer.Length);
+				await ms.WriteAsync(buffer, 0, buffer.Length);
 
 				buffer = BitConverter.GetBytes(this.Version.Major);
-				ms.Write(buffer, 0, buffer.Length);
+				await ms.WriteAsync(buffer, 0, buffer.Length);
 
 				buffer = BitConverter.GetBytes(this.Version.Minor);
-				ms.Write(buffer, 0, buffer.Length);
+				await ms.WriteAsync(buffer, 0, buffer.Length);
 
 				buffer = BitConverter.GetBytes(this.Version.Build);
-				ms.Write(buffer, 0, buffer.Length);
+				await ms.WriteAsync(buffer, 0, buffer.Length);
 
 				buffer = BitConverter.GetBytes(this.Version.Revision);
-				ms.Write(buffer, 0, buffer.Length);
+				await ms.WriteAsync(buffer, 0, buffer.Length);
 
 				if (includeData)
 				{
-					ms.Write(this.Package, 0, this.Package.Length);
+					await ms.WriteAsync(this.Package, 0, this.Package.Length);
 				}
 
 				return ms.GetBuffer();
