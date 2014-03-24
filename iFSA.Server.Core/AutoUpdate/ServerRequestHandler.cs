@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net.Sockets;
-using iFSA.Server.Core;
 
 namespace iFSA.Server.AutoUpdate
 {
@@ -13,7 +12,7 @@ namespace iFSA.Server.AutoUpdate
 		{
 		}
 
-		public override void Execute(NetworkStream stream, byte functionId)
+		public override void Process(NetworkStream stream, byte functionId)
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 

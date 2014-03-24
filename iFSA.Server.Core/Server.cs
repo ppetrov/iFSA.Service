@@ -4,7 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
-namespace iFSA.Server.Core
+namespace iFSA.Server
 {
 	public sealed class Server
 	{
@@ -25,7 +25,7 @@ namespace iFSA.Server.Core
 			_listener = new TcpListener(address, port);
 		}
 
-		public void Add(ServerRequestHandlerBase requestHandler)
+		public void Register(ServerRequestHandlerBase requestHandler)
 		{
 			if (requestHandler == null) throw new ArgumentNullException("requestHandler");
 
@@ -82,7 +82,7 @@ namespace iFSA.Server.Core
 							if (value != -1)
 							{
 								var functionId = (byte)value;
-								_handlers[handleId].Execute(s, functionId);
+								_handlers[handleId].Process(s, functionId);
 								s.ReadByte();
 							}
 						}

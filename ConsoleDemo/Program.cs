@@ -4,8 +4,8 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using iFSA.Server;
 using iFSA.Server.AutoUpdate;
-using iFSA.Server.Core;
 
 namespace ConsoleDemo
 {
@@ -50,7 +50,7 @@ namespace ConsoleDemo
 				try
 				{
 					var s = new Server(IPAddress.Parse(hostname), port);
-					s.Add(new ServerRequestHandler(1));
+					s.Register(new ServerRequestHandler(1));
 					s.Start();
 				}
 				catch (Exception ex)

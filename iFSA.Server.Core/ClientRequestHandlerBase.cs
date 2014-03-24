@@ -1,16 +1,18 @@
 ﻿using System;
 
-namespace iFSA.Server.Core
+namespace iFSA.Server
 {
-	public abstract class ClientRequestHandlerBase : RequestHandler
+	public abstract class ClientRequestHandlerBase
 	{
+		public byte Id { get; private set; }
 		public TransferHandler TransferHandler { get; private set; }
 
 		protected ClientRequestHandlerBase(byte id, TransferHandler transferHandler)
-			: base(id)
 		{
+			if (id <= 0) throw new ArgumentOutOfRangeException("id");
 			if (transferHandler == null) throw new ArgumentNullException("transferHandler");
 
+			this.Id = id;
 			this.TransferHandler = transferHandler;
 		}
 	}

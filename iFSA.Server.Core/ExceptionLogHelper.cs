@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace iFSA.Server.Core
+namespace iFSA.Server
 {
 	public static class ExceptionLogHelper
 	{

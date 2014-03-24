@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net.Sockets;
-using iFSA.Server.Core;
 
 namespace iFSA.Server.AutoUpdate
 {
