@@ -72,8 +72,7 @@ namespace iFSA.Service
 							value = s.ReadByte();
 							if (value != -1)
 							{
-								var functionId = (byte)value;
-								await _handlers[handleId].ProcessAsync(s, functionId);
+								await _handlers[handleId].ProcessAsync(s, (byte)value);
 								s.ReadByte();
 							}
 						}

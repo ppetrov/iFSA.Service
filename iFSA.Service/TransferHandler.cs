@@ -1,12 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.IO.Compression;
-using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace iFSA.Service
 {
-	public class TransferHandler
+	public sealed class TransferHandler
 	{
 		public static readonly byte[] NoData = BitConverter.GetBytes(-1);
 
@@ -17,14 +16,14 @@ namespace iFSA.Service
 		public bool EnableCompression { get; set; }
 
 		public event EventHandler<decimal> WriteProgress;
-		protected virtual void OnWriteProgress(decimal e)
+		private void OnWriteProgress(decimal e)
 		{
 			var handler = WriteProgress;
 			if (handler != null) handler(this, e);
 		}
 
 		public event EventHandler<decimal> ReadProgress;
-		protected virtual void OnReadProgress(decimal e)
+		private void OnReadProgress(decimal e)
 		{
 			var handler = ReadProgress;
 			if (handler != null) handler(this, e);
@@ -83,7 +82,7 @@ namespace iFSA.Service
 			}).ConfigureAwait(false);
 		}
 
-		public async Task WriteFuncAsync(NetworkStream stream, byte handlerId, byte functionId)
+		public async Task WriteMethodAsync(Stream stream, byte handlerId, byte methodId)
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 			if (handlerId <= 0) throw new ArgumentOutOfRangeException("stream");
@@ -91,11 +90,11 @@ namespace iFSA.Service
 			_byteBuffer[0] = handlerId;
 			await stream.WriteAsync(_byteBuffer, 0, _byteBuffer.Length);
 
-			_byteBuffer[0] = functionId;
+			_byteBuffer[0] = methodId;
 			await stream.WriteAsync(_byteBuffer, 0, _byteBuffer.Length);
 		}
 
-		public async Task WriteCloseAsync(NetworkStream stream)
+		public async Task WriteCloseAsync(Stream stream)
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
@@ -103,7 +102,7 @@ namespace iFSA.Service
 			await stream.WriteAsync(_byteBuffer, 0, _byteBuffer.Length);
 		}
 
-		public async Task WriteDataAsync(NetworkStream stream, byte[] input)
+		public async Task WriteDataAsync(Stream stream, byte[] input)
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 			if (input == null) throw new ArgumentNullException("input");
@@ -135,7 +134,7 @@ namespace iFSA.Service
 			this.OnWriteProgress(this.GetProgressPercent(dataSize, dataSize));
 		}
 
-		public async Task<byte[]> ReadDataAsync(NetworkStream stream)
+		public async Task<byte[]> ReadDataAsync(Stream stream)
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 

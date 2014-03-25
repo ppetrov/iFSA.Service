@@ -6,14 +6,19 @@ namespace iFSA.Service.AutoUpdate
 {
 	public sealed class ServerVersion : AppVersion
 	{
-		public byte[] Package { get; private set; }
+		public const int VersionNetworkBufferSize = 20;
+
+		private byte[] _versionNetworkBuffer;
+		private readonly byte[] _package;
+
+		public byte[] Package { get { return _package; } }
 
 		public ServerVersion(Platform platform, Version version, byte[] package)
 			: base(platform, version)
 		{
 			if (package == null) throw new ArgumentNullException("package");
 
-			this.Package = package;
+			_package = package;
 		}
 
 		public ServerVersion(byte[] input)
@@ -23,39 +28,31 @@ namespace iFSA.Service.AutoUpdate
 
 			this.Setup(input);
 
-			this.Package = new byte[input.Length - 20];
-			Array.Copy(input, 20, this.Package, 0, this.Package.Length);
+			_package = new byte[input.Length - VersionNetworkBufferSize];
+			Array.Copy(input, VersionNetworkBufferSize, _package, 0, _package.Length);
 		}
 
-		public async Task<byte[]> GetNetworkBufferAsync(bool includeData = true)
+		public async Task<byte[]> GetVersionNetworkBufferAsync()
 		{
-			var capacity = 20;
-			if (includeData)
+			if (_versionNetworkBuffer == null)
 			{
-				capacity += this.Package.Length;
-			}
-			using (var ms = new MemoryStream(capacity))
-			{
-				var buffer = BitConverter.GetBytes((int)this.Platform);
-				await ms.WriteAsync(buffer, 0, buffer.Length);
+				_versionNetworkBuffer = new byte[VersionNetworkBufferSize];
 
-				buffer = BitConverter.GetBytes(this.Version.Major);
-				await ms.WriteAsync(buffer, 0, buffer.Length);
-
-				buffer = BitConverter.GetBytes(this.Version.Minor);
-				await ms.WriteAsync(buffer, 0, buffer.Length);
-
-				buffer = BitConverter.GetBytes(this.Version.Build);
-				await ms.WriteAsync(buffer, 0, buffer.Length);
-
-				buffer = BitConverter.GetBytes(this.Version.Revision);
-				await ms.WriteAsync(buffer, 0, buffer.Length);
-
-				if (includeData)
+				using (var ms = new MemoryStream(_versionNetworkBuffer))
 				{
-					await ms.WriteAsync(this.Package, 0, this.Package.Length);
+					await this.WriteAsync(ms);
 				}
+			}
 
+			return _versionNetworkBuffer;
+		}
+
+		public async Task<byte[]> GetNetworkBufferAsync()
+		{
+			using (var ms = new MemoryStream(VersionNetworkBufferSize + _package.Length))
+			{
+				await this.WriteAsync(ms);
+				await ms.WriteAsync(_package, 0, _package.Length);
 				return ms.GetBuffer();
 			}
 		}

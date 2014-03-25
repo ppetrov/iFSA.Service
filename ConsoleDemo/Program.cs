@@ -49,37 +49,54 @@ namespace ConsoleDemo
 			}
 
 			Thread.Sleep(1000);
+			using (var c = new TcpClient(hostname, port))
+			{
+				var package = h.GetVersionsAsync(c).Result;
+				if (package != null)
+				{
+					Console.WriteLine(package);
+				}
+				else
+				{
+					Console.WriteLine(@"No versions is available");
+				}
+			}
+
+
+			Thread.Sleep(1000);
 			Console.WriteLine(@"Upload version for " + platform);
 			using (var c = new TcpClient(hostname, port))
 			{
-				byte[] package;
-
-				var f = new FileInfo(@"C:\temp\pack.dat");
-				var size = (int)f.Length;
-				Console.WriteLine(size);
-				using (var ms = new MemoryStream(size))
-				{
-					using (var fs = f.OpenRead())
-					{
-						var buffer = new byte[16 * 1024];
-
-						int readBytes;
-						while ((readBytes = fs.Read(buffer, 0, buffer.Length)) != 0)
-						{
-							ms.Write(buffer, 0, readBytes);
-						}
-					}
-					package = ms.GetBuffer();
-				}
-
-				h.PublishVersionAsync(c, new ServerVersion(platform, new Version(2, 2, 2, 2), package)).Wait();
+				h.UploadVersionAsync(c, new ServerVersion(platform, new Version(2, 2, 2, 2), GetPackage())).Wait();
 			}
+
+			Thread.Sleep(1000);
+			Console.WriteLine(@"Upload version for " + platform);
+			using (var c = new TcpClient(hostname, port))
+			{
+				h.UploadVersionAsync(c, new ServerVersion(Platform.WindowsMobile, new Version(3, 3, 3, 3), GetPackage())).Wait();
+			}
+
 
 			Thread.Sleep(1000);
 			Console.WriteLine(@"Get version for " + platform);
 			using (var c = new TcpClient(hostname, port))
 			{
 				Console.WriteLine(h.GetVersionAsync(c, platform).Result);
+			}
+
+			Thread.Sleep(1000);
+			using (var c = new TcpClient(hostname, port))
+			{
+				var package = h.GetVersionsAsync(c).Result;
+				if (package != null)
+				{
+					Console.WriteLine(package);
+				}
+				else
+				{
+					Console.WriteLine(@"No versions is available");
+				}
 			}
 
 			Thread.Sleep(1000);
@@ -140,6 +157,30 @@ namespace ConsoleDemo
 			Console.WriteLine(w.ElapsedMilliseconds);
 
 			//WaitHandle.WaitAll(new WaitHandle[] { new ManualResetEvent(false) });
+		}
+
+		private static byte[] GetPackage()
+		{
+			byte[] package;
+
+			var f = new FileInfo(@"C:\temp\pack.dat");
+			var size = (int)f.Length;
+			Console.WriteLine(size);
+			using (var ms = new MemoryStream(size))
+			{
+				using (var fs = f.OpenRead())
+				{
+					var buffer = new byte[16 * 1024];
+
+					int readBytes;
+					while ((readBytes = fs.Read(buffer, 0, buffer.Length)) != 0)
+					{
+						ms.Write(buffer, 0, readBytes);
+					}
+				}
+				package = ms.GetBuffer();
+			}
+			return package;
 		}
 	}
 }

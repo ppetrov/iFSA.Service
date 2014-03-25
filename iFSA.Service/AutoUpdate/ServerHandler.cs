@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Net.Sockets;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace iFSA.Service.AutoUpdate
@@ -13,34 +13,85 @@ namespace iFSA.Service.AutoUpdate
 		{
 		}
 
-		public override async Task ProcessAsync(NetworkStream stream, byte functionId)
+		public override async Task ProcessAsync(Stream stream, byte methodId)
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
 			var h = new TransferHandler { EnableCompression = false };
-			switch ((Function)functionId)
+			switch ((Method)methodId)
 			{
-				case Function.PublishVersion:
-					await this.PublishVersionAsync(stream, h);
-					break;
-				case Function.DownloadVersion:
-					await this.DownloadVersionAsync(stream, h);
-					break;
-				case Function.GetVersion:
+				case Method.GetVersion:
 					await this.GetVersionAsync(stream, h);
+					break;
+				case Method.GetVersions:
+					await this.GetVersionsAsync(stream, h);
+					break;
+				case Method.UploadVersion:
+					await this.UploadVersionAsync(stream, h);
+					break;
+				case Method.DownloadVersion:
+					await this.DownloadVersionAsync(stream, h);
 					break;
 				default:
 					throw new ArgumentOutOfRangeException();
 			}
 		}
 
-		private async Task PublishVersionAsync(NetworkStream stream, TransferHandler handler)
+		private async Task GetVersionAsync(Stream stream, TransferHandler handler)
 		{
-			var data = await handler.DecompressAsync(await handler.ReadDataAsync(stream));
-			this.SetupVersion(new ServerVersion(data));
+			var networkBuffer = TransferHandler.NoData;
+
+			var platform = BitConverter.ToInt32(await handler.ReadDataAsync(stream), 0);
+			if (0 <= platform && platform < _versions.Length)
+			{
+				var serverVersion = _versions[platform];
+				if (serverVersion != null)
+				{
+					networkBuffer = await serverVersion.GetVersionNetworkBufferAsync();
+				}
+			}
+
+			await handler.WriteDataAsync(stream, networkBuffer);
 		}
 
-		private async Task DownloadVersionAsync(NetworkStream stream, TransferHandler handler)
+		private async Task GetVersionsAsync(Stream stream, TransferHandler handler)
+		{
+			var networkBuffer = TransferHandler.NoData;
+
+			var versions = 0;
+			foreach (var v in _versions)
+			{
+				if (v != null)
+				{
+					versions++;
+				}
+			}
+			if (versions > 0)
+			{
+				using (var ms = new MemoryStream(versions * ServerVersion.VersionNetworkBufferSize))
+				{
+					foreach (var v in _versions)
+					{
+						if (v != null)
+						{
+							var buffer = await v.GetVersionNetworkBufferAsync();
+							await ms.WriteAsync(buffer, 0, buffer.Length);
+						}
+					}
+					networkBuffer = ms.GetBuffer();
+				}
+			}
+
+			await handler.WriteDataAsync(stream, networkBuffer);
+		}
+
+		private async Task UploadVersionAsync(Stream stream, TransferHandler handler)
+		{
+			var data = await handler.DecompressAsync(await handler.ReadDataAsync(stream));
+			this.Setup(new ServerVersion(data));
+		}
+
+		private async Task DownloadVersionAsync(Stream stream, TransferHandler handler)
 		{
 			var networkBuffer = TransferHandler.NoData;
 
@@ -54,24 +105,7 @@ namespace iFSA.Service.AutoUpdate
 			await handler.WriteDataAsync(stream, networkBuffer);
 		}
 
-		private async Task GetVersionAsync(NetworkStream stream, TransferHandler handler)
-		{
-			var networkBuffer = TransferHandler.NoData;
-
-			var platform = BitConverter.ToInt32(await handler.ReadDataAsync(stream), 0);
-			if (0 <= platform && platform < _versions.Length)
-			{
-				var serverVersion = _versions[platform];
-				if (serverVersion != null)
-				{
-					networkBuffer = await serverVersion.GetNetworkBufferAsync(false);
-				}
-			}
-
-			await handler.WriteDataAsync(stream, networkBuffer);
-		}
-
-		private void SetupVersion(ServerVersion serverVersion)
+		private void Setup(ServerVersion serverVersion)
 		{
 			_versions[(int)serverVersion.Platform] = serverVersion;
 		}
