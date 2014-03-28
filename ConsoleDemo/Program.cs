@@ -13,6 +13,27 @@ namespace ConsoleDemo
 	{
 		static void Main(string[] args)
 		{
+			var ph = new PackageHandler();
+			using (var fs = File.OpenWrite(@"C:\temp\package.dat"))
+			{
+				ph.PackAsync(new DirectoryInfo(@"C:\temp\arch"), fs).Wait();
+			}
+			using (var fs = File.OpenRead(@"C:\temp\package.dat"))
+			{
+				var f = new DirectoryInfo(@"C:\temp\arch2");
+				if (f.Exists)
+				{
+					f.Delete(true);
+				}
+				f.Create();
+				ph.UnpackAsync(fs, f).Wait();
+			}
+
+
+			Console.WriteLine(@"Done");
+
+			return;
+
 			var hostname = @"127.0.0.1";
 			var port = 11111;
 
