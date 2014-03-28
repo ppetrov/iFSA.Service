@@ -34,14 +34,18 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AutoUpdate\AppVersion.cs" />
-    <Compile Include="AutoUpdate\ClientHandler.cs" />
-    <Compile Include="AutoUpdate\ClientVersion.cs" />
-    <Compile Include="AutoUpdate\Method.cs" />
+    <Compile Include="Update\UpdateMethods.cs" />
+    <Compile Include="Update\UpdateClientHandler.cs" />
+    <Compile Include="Update\UpdateServerHandler.cs" />
+    <Compile Include="Logs\ClientLog.cs" />
+    <Compile Include="AppVersion.cs" />
+    <Compile Include="Logs\LogsClientHandler.cs" />
+    <Compile Include="ClientVersion.cs" />
+    <Compile Include="Logs\LogMethods.cs" />
     <Compile Include="PackageHandler.cs" />
-    <Compile Include="AutoUpdate\Platform.cs" />
-    <Compile Include="AutoUpdate\ServerHandler.cs" />
-    <Compile Include="AutoUpdate\ServerVersion.cs" />
+    <Compile Include="ClientPlatform.cs" />
+    <Compile Include="Logs\LogsServerHandler.cs" />
+    <Compile Include="Update\UpdateVersion.cs" />
     <Compile Include="ClientHandlerBase.cs" />
     <Compile Include="ExceptionLogHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -49,6 +53,7 @@
     <Compile Include="ServerHandlerBase.cs" />
     <Compile Include="TransferHandler.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

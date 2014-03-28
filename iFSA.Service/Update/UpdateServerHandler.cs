@@ -2,13 +2,13 @@
 using System.IO;
 using System.Threading.Tasks;
 
-namespace iFSA.Service.AutoUpdate
+namespace iFSA.Service.Update
 {
-	public sealed class ServerHandler : ServerHandlerBase
+	public sealed class UpdateServerHandler : ServerHandlerBase
 	{
-		private readonly ServerVersion[] _versions = new ServerVersion[3];
+		private readonly UpdateVersion[] _versions = new UpdateVersion[3];
 
-		public ServerHandler(byte id)
+		public UpdateServerHandler(byte id)
 			: base(id)
 		{
 		}
@@ -18,18 +18,18 @@ namespace iFSA.Service.AutoUpdate
 			if (stream == null) throw new ArgumentNullException("stream");
 
 			var h = new TransferHandler { EnableCompression = false };
-			switch ((Method)methodId)
+			switch ((UpdateMethods)methodId)
 			{
-				case Method.GetVersion:
+				case UpdateMethods.GetVersion:
 					await this.GetVersionAsync(stream, h);
 					break;
-				case Method.GetVersions:
+				case UpdateMethods.GetVersions:
 					await this.GetVersionsAsync(stream, h);
 					break;
-				case Method.UploadVersion:
+				case UpdateMethods.UploadVersion:
 					await this.UploadVersionAsync(stream, h);
 					break;
-				case Method.DownloadVersion:
+				case UpdateMethods.DownloadVersion:
 					await this.DownloadVersionAsync(stream, h);
 					break;
 				default:
@@ -68,7 +68,7 @@ namespace iFSA.Service.AutoUpdate
 			}
 			if (versions > 0)
 			{
-				using (var ms = new MemoryStream(versions * ServerVersion.VersionNetworkBufferSize))
+				using (var ms = new MemoryStream(versions * UpdateVersion.VersionNetworkBufferSize))
 				{
 					foreach (var v in _versions)
 					{
@@ -88,7 +88,7 @@ namespace iFSA.Service.AutoUpdate
 		private async Task UploadVersionAsync(Stream stream, TransferHandler handler)
 		{
 			var data = await handler.DecompressAsync(await handler.ReadDataAsync(stream));
-			this.Setup(new ServerVersion(data));
+			this.Setup(new UpdateVersion(data));
 		}
 
 		private async Task DownloadVersionAsync(Stream stream, TransferHandler handler)
@@ -96,7 +96,7 @@ namespace iFSA.Service.AutoUpdate
 			var networkBuffer = TransferHandler.NoData;
 
 			var clientVersion = new ClientVersion(await handler.ReadDataAsync(stream));
-			var serverVersion = _versions[(int)clientVersion.Platform];
+			var serverVersion = _versions[(int)clientVersion.ClientPlatform];
 			if (serverVersion != null && serverVersion.Version > clientVersion.Version)
 			{
 				networkBuffer = serverVersion.Package;
@@ -105,9 +105,9 @@ namespace iFSA.Service.AutoUpdate
 			await handler.WriteDataAsync(stream, networkBuffer);
 		}
 
-		private void Setup(ServerVersion serverVersion)
+		private void Setup(UpdateVersion updateVersion)
 		{
-			_versions[(int)serverVersion.Platform] = serverVersion;
+			_versions[(int)updateVersion.ClientPlatform] = updateVersion;
 		}
 	}
 }

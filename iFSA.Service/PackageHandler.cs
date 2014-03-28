@@ -31,24 +31,29 @@ namespace iFSA.Service
 			if (handler != null) handler(this, e);
 		}
 
+		public async Task<byte[]> PackAsync(byte[] clientBuffer, DirectoryInfo folder, string searchPattern)
+		{
+			if (clientBuffer == null) throw new ArgumentNullException("clientBuffer");
+			if (folder == null) throw new ArgumentNullException("folder");
+			if (searchPattern == null) throw new ArgumentNullException("searchPattern");
+
+			var package = await ReadFolderAsync(folder, searchPattern);
+			using (var output = new MemoryStream(clientBuffer.Length + package.Item1.Length + package.Item2.Length + package.Item3.Length))
+			{
+				await output.WriteAsync(clientBuffer, 0, clientBuffer.Length);
+
+				await PackAsync(output, package.Item1, package.Item2, package.Item3);
+				return output.GetBuffer();
+			}
+		}
+
 		public async Task PackAsync(DirectoryInfo folder, Stream output)
 		{
 			if (folder == null) throw new ArgumentNullException("folder");
 			if (output == null) throw new ArgumentNullException("output");
 
-			var package = await this.ReadFolderAsync(folder);
-			var header = package.Item1;
-			var data = package.Item2;
-
-			var headerData = _encoding.GetBytes(header);
-			var headerSize = BitConverter.GetBytes(headerData.Length);
-
-			await output.WriteAsync(headerSize, 0, headerSize.Length);
-			await output.WriteAsync(headerData, 0, headerData.Length);
-			using (var input = new MemoryStream(data))
-			{
-				await this.CopyAsync(input, output, data.Length);
-			}
+			var package = await ReadFolderAsync(folder, @"*");
+			await PackAsync(output, package.Item1, package.Item2, package.Item3);
 		}
 
 		public async Task UnpackAsync(Stream input, DirectoryInfo folder)
@@ -81,14 +86,14 @@ namespace iFSA.Service
 			}
 		}
 
-		private async Task<Tuple<string, byte[]>> ReadFolderAsync(FileSystemInfo folder)
+		private async Task<Tuple<byte[], byte[], byte[]>> ReadFolderAsync(FileSystemInfo folder, string searchPattern)
 		{
 			using (var output = new MemoryStream())
 			{
 				var header = new StringBuilder();
 				var offset = folder.FullName.Length + 1;
 
-				foreach (var fileName in Directory.EnumerateFiles(folder.FullName, @"*", SearchOption.AllDirectories))
+				foreach (var fileName in Directory.EnumerateFiles(folder.FullName, searchPattern, SearchOption.AllDirectories))
 				{
 					this.OnFileProgress(fileName);
 
@@ -108,7 +113,21 @@ namespace iFSA.Service
 					header.Append(size);
 				}
 
-				return Tuple.Create(header.ToString(), output.GetBuffer());
+				var headerData = _encoding.GetBytes(header.ToString());
+				var headerSize = BitConverter.GetBytes(headerData.Length);
+
+				return Tuple.Create(headerSize, headerData, output.GetBuffer());
+			}
+		}
+
+		private async Task PackAsync(Stream output, byte[] headerSize, byte[] headerData, byte[] data)
+		{
+			await output.WriteAsync(headerSize, 0, headerSize.Length);
+			await output.WriteAsync(headerData, 0, headerData.Length);
+
+			using (var input = new MemoryStream(data))
+			{
+				await this.CopyAsync(input, output, data.Length);
 			}
 		}
 
@@ -171,6 +190,5 @@ namespace iFSA.Service
 			_readBytes += readBytes;
 			this.OnPercentProgress(Convert.ToDouble(_readBytes / _totalBytes));
 		}
-
 	}
 }

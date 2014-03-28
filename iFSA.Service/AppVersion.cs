@@ -2,18 +2,18 @@
 using System.IO;
 using System.Threading.Tasks;
 
-namespace iFSA.Service.AutoUpdate
+namespace iFSA.Service
 {
 	public class AppVersion
 	{
-		public Platform Platform { get; private set; }
+		public ClientPlatform ClientPlatform { get; private set; }
 		public Version Version { get; private set; }
 
-		public AppVersion(Platform platform, Version version)
+		public AppVersion(ClientPlatform clientPlatform, Version version)
 		{
 			if (version == null) throw new ArgumentNullException("version");
 
-			this.Platform = platform;
+			this.ClientPlatform = clientPlatform;
 			this.Version = version;
 		}
 
@@ -21,7 +21,7 @@ namespace iFSA.Service.AutoUpdate
 		{
 			if (input == null) throw new ArgumentNullException("input");
 
-			this.Platform = (Platform)BitConverter.ToInt32(input, 0);
+			this.ClientPlatform = (ClientPlatform)BitConverter.ToInt32(input, 0);
 			this.Version = new Version(BitConverter.ToInt32(input, 4), BitConverter.ToInt32(input, 8), BitConverter.ToInt32(input, 12), BitConverter.ToInt32(input, 16));
 		}
 
@@ -29,7 +29,7 @@ namespace iFSA.Service.AutoUpdate
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
-			var buffer = BitConverter.GetBytes((int)this.Platform);
+			var buffer = BitConverter.GetBytes((int)this.ClientPlatform);
 			await stream.WriteAsync(buffer, 0, buffer.Length);
 
 			buffer = BitConverter.GetBytes(this.Version.Major);

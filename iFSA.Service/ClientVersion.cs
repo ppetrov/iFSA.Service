@@ -2,15 +2,15 @@
 using System.IO;
 using System.Text;
 
-namespace iFSA.Service.AutoUpdate
+namespace iFSA.Service
 {
 	public sealed class ClientVersion : AppVersion
 	{
 		public string Username { get; private set; }
 		public string Password { get; private set; }
 
-		public ClientVersion(Platform platform, Version version, string username, string password)
-			: base(platform, version)
+		public ClientVersion(ClientPlatform clientPlatform, Version version, string username, string password)
+			: base(clientPlatform, version)
 		{
 			if (username == null) throw new ArgumentNullException("username");
 			if (password == null) throw new ArgumentNullException("password");
@@ -20,7 +20,7 @@ namespace iFSA.Service.AutoUpdate
 		}
 
 		public ClientVersion(byte[] input)
-			: base(Platform.Ipad, new Version())
+			: base(ClientPlatform.IPad, new Version())
 		{
 			this.Setup(input);
 			var userDataLength = BitConverter.ToInt32(input, 20);
@@ -33,7 +33,7 @@ namespace iFSA.Service.AutoUpdate
 		{
 			using (var ms = new MemoryStream(256))
 			{
-				var buffer = BitConverter.GetBytes((int)this.Platform);
+				var buffer = BitConverter.GetBytes((int)this.ClientPlatform);
 				ms.Write(buffer, 0, buffer.Length);
 
 				var v = this.Version;

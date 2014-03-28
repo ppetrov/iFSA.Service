@@ -3,11 +3,11 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace iFSA.Service.AutoUpdate
+namespace iFSA.Service.Update
 {
-	public sealed class ClientHandler : ClientHandlerBase
+	public sealed class UpdateClientHandler : ClientHandlerBase
 	{
-		public ClientHandler(byte id)
+		public UpdateClientHandler(byte id)
 			: base(id, new TransferHandler { EnableCompression = false })
 		{
 #if DEBUG
@@ -16,13 +16,13 @@ namespace iFSA.Service.AutoUpdate
 #endif
 		}
 
-		public async Task<Version> GetVersionAsync(TcpClient client, Platform platform)
+		public async Task<Version> GetVersionAsync(TcpClient client, ClientPlatform platform)
 		{
 			if (client == null) throw new ArgumentNullException("client");
 
 			using (var s = client.GetStream())
 			{
-				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)Method.GetVersion);
+				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)UpdateMethods.GetVersion);
 				await this.TransferHandler.WriteDataAsync(s, BitConverter.GetBytes((int)platform));
 
 				var data = await this.TransferHandler.ReadDataAsync(s);
@@ -30,7 +30,7 @@ namespace iFSA.Service.AutoUpdate
 
 				if (data.Length != TransferHandler.NoData.Length)
 				{
-					return new ServerVersion(data).Version;
+					return new UpdateVersion(data).Version;
 				}
 			}
 
@@ -43,14 +43,14 @@ namespace iFSA.Service.AutoUpdate
 
 			using (var s = client.GetStream())
 			{
-				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)Method.GetVersions);
+				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)UpdateMethods.GetVersions);
 
 				var data = await this.TransferHandler.ReadDataAsync(s);
 				await this.TransferHandler.WriteCloseAsync(s);
 
 				if (data.Length != TransferHandler.NoData.Length)
 				{
-					var buffer = new byte[ServerVersion.VersionNetworkBufferSize];
+					var buffer = new byte[UpdateVersion.VersionNetworkBufferSize];
 					var versions = new AppVersion[data.Length / buffer.Length];
 
 					using (var ms = new MemoryStream(data))
@@ -58,7 +58,7 @@ namespace iFSA.Service.AutoUpdate
 						for (var i = 0; i < versions.Length; i++)
 						{
 							await ms.ReadAsync(buffer, 0, buffer.Length);
-							versions[i] = new ServerVersion(buffer);
+							versions[i] = new UpdateVersion(buffer);
 						}
 					}
 
@@ -69,14 +69,14 @@ namespace iFSA.Service.AutoUpdate
 			return null;
 		}
 
-		public async Task UploadVersionAsync(TcpClient client, ServerVersion version)
+		public async Task UploadVersionAsync(TcpClient client, UpdateVersion version)
 		{
 			if (client == null) throw new ArgumentNullException("client");
 			if (version == null) throw new ArgumentNullException("version");
 
 			using (var s = client.GetStream())
 			{
-				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)Method.UploadVersion);
+				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)UpdateMethods.UploadVersion);
 				await this.TransferHandler.WriteDataAsync(s, await this.TransferHandler.CompressAsync(await version.GetNetworkBufferAsync()));
 				await this.TransferHandler.WriteCloseAsync(s);
 			}
@@ -89,7 +89,7 @@ namespace iFSA.Service.AutoUpdate
 
 			using (var s = client.GetStream())
 			{
-				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)Method.DownloadVersion);
+				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)UpdateMethods.DownloadVersion);
 				await this.TransferHandler.WriteDataAsync(s, version.GetNetworkBuffer());
 
 				var data = await this.TransferHandler.ReadDataAsync(s);

@@ -2,9 +2,9 @@
 using System.IO;
 using System.Threading.Tasks;
 
-namespace iFSA.Service.AutoUpdate
+namespace iFSA.Service.Update
 {
-	public sealed class ServerVersion : AppVersion
+	public sealed class UpdateVersion : AppVersion
 	{
 		public const int VersionNetworkBufferSize = 20;
 
@@ -13,16 +13,16 @@ namespace iFSA.Service.AutoUpdate
 
 		public byte[] Package { get { return _package; } }
 
-		public ServerVersion(Platform platform, Version version, byte[] package)
-			: base(platform, version)
+		public UpdateVersion(ClientPlatform clientPlatform, Version version, byte[] package)
+			: base(clientPlatform, version)
 		{
 			if (package == null) throw new ArgumentNullException("package");
 
 			_package = package;
 		}
 
-		public ServerVersion(byte[] input)
-			: base(Platform.Ipad, new Version())
+		public UpdateVersion(byte[] input)
+			: base(ClientPlatform.IPad, new Version())
 		{
 			if (input == null) throw new ArgumentNullException("input");
 
