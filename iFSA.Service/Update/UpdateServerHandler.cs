@@ -41,14 +41,10 @@ namespace iFSA.Service.Update
 		{
 			var networkBuffer = TransferHandler.NoData;
 
-			var platform = BitConverter.ToInt32(await handler.ReadDataAsync(stream), 0);
-			if (0 <= platform && platform < _versions.Length)
+			var version = _versions[BitConverter.ToInt32(await handler.ReadDataAsync(stream), 0)];
+			if (version != null)
 			{
-				var serverVersion = _versions[platform];
-				if (serverVersion != null)
-				{
-					networkBuffer = await serverVersion.GetVersionNetworkBufferAsync();
-				}
+				networkBuffer = version.AppVersion.NetworkBuffer;
 			}
 
 			await handler.WriteDataAsync(stream, networkBuffer);
@@ -58,26 +54,19 @@ namespace iFSA.Service.Update
 		{
 			var networkBuffer = TransferHandler.NoData;
 
-			var versions = 0;
-			foreach (var v in _versions)
+			using (var ms = new MemoryStream())
 			{
-				if (v != null)
+				foreach (var v in _versions)
 				{
-					versions++;
-				}
-			}
-			if (versions > 0)
-			{
-				using (var ms = new MemoryStream(versions * UpdateVersion.VersionNetworkBufferSize))
-				{
-					foreach (var v in _versions)
+					if (v != null)
 					{
-						if (v != null)
-						{
-							var buffer = await v.GetVersionNetworkBufferAsync();
-							await ms.WriteAsync(buffer, 0, buffer.Length);
-						}
+						var buffer = v.AppVersion.NetworkBuffer;
+						ms.Capacity += buffer.Length;
+						ms.Write(buffer, 0, buffer.Length);
 					}
+				}
+				if (ms.Length != 0)
+				{
 					networkBuffer = ms.GetBuffer();
 				}
 			}
@@ -88,18 +77,24 @@ namespace iFSA.Service.Update
 		private async Task UploadVersionAsync(Stream stream, TransferHandler handler)
 		{
 			var data = await handler.DecompressAsync(await handler.ReadDataAsync(stream));
-			this.Setup(new UpdateVersion(data));
+			using (var ms = new MemoryStream(data))
+			{
+				var version = AppVersion.Create(ms);
+				var package = new byte[data.Length - ms.Position];
+				Array.Copy(data, ms.Position, package, 0, package.Length);
+				this.Setup(new UpdateVersion(version, package));
+			}
 		}
 
 		private async Task DownloadVersionAsync(Stream stream, TransferHandler handler)
 		{
 			var networkBuffer = TransferHandler.NoData;
 
-			var clientVersion = new ClientVersion(await handler.ReadDataAsync(stream));
-			var serverVersion = _versions[(int)clientVersion.ClientPlatform];
-			if (serverVersion != null && serverVersion.Version > clientVersion.Version)
+			var clientVersion = AppVersion.Create(await handler.ReadDataAsync(stream));
+			var updateVersion = _versions[(int)clientVersion.ClientPlatform];
+			if (updateVersion != null && updateVersion.AppVersion.Version > clientVersion.Version)
 			{
-				networkBuffer = serverVersion.Package;
+				networkBuffer = updateVersion.Package;
 			}
 
 			await handler.WriteDataAsync(stream, networkBuffer);
@@ -107,7 +102,7 @@ namespace iFSA.Service.Update
 
 		private void Setup(UpdateVersion updateVersion)
 		{
-			_versions[(int)updateVersion.ClientPlatform] = updateVersion;
+			_versions[(int)updateVersion.AppVersion.ClientPlatform] = updateVersion;
 		}
 	}
 }

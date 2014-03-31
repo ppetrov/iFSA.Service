@@ -6,7 +6,6 @@ namespace iFSA.Service.Logs
 {
 	public sealed class LogsServerHandler : ServerHandlerBase
 	{
-		private readonly byte[] _platformBuffer = BitConverter.GetBytes(0);
 		private readonly DirectoryInfo[] _folders = new DirectoryInfo[3];
 
 		public LogsServerHandler(byte id)
@@ -38,13 +37,10 @@ namespace iFSA.Service.Logs
 
 			using (var ms = new MemoryStream(data))
 			{
-				var cv = new ClientVersion(data);
+				var appVersion = AppVersion.Create(ms);
+				var f = _folders[(int)appVersion.ClientPlatform] ?? new DirectoryInfo(@"C:\temp\Logs2");
 
-				ms.Position += cv.GetNetworkBuffer().Length;
-
-				var f = _folders[(int)cv.ClientPlatform] ?? new DirectoryInfo(@"C:\temp\Logs2");
-
-				await new PackageHandler().UnpackAsync(ms, f);
+				await new PackageHandler(handler.Buffer).UnpackAsync(ms, f);
 			}
 		}
 

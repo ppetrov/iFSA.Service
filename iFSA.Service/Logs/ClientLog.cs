@@ -4,23 +4,28 @@ using System.Threading.Tasks;
 
 namespace iFSA.Service.Logs
 {
-	public class ClientLog
+	public sealed class ClientLog
 	{
+		public AppVersion AppVersion { get; private set; }
 		public DirectoryInfo Folder { get; private set; }
 		public string SearchPattern { get; private set; }
 
-		public ClientLog(DirectoryInfo folder, string searchPattern = @"*.txt")
+		public ClientLog(AppVersion appVersion, DirectoryInfo folder, string searchPattern = @"*.txt")
 		{
+			if (appVersion == null) throw new ArgumentNullException("appVersion");
 			if (folder == null) throw new ArgumentNullException("folder");
 			if (searchPattern == null) throw new ArgumentNullException("searchPattern");
 
+			this.AppVersion = appVersion;
 			this.Folder = folder;
 			this.SearchPattern = searchPattern;
 		}
 
-		public async Task<byte[]> GetNetworkBufferAsync(byte[] clientBuffer)
+		public async Task<byte[]> GetNetworkBufferAsync(byte[] buffer)
 		{
-			return await new PackageHandler().PackAsync(clientBuffer, this.Folder, this.SearchPattern);
+			if (buffer == null) throw new ArgumentNullException("buffer");
+
+			return await new PackageHandler(buffer).PackAsync(this.AppVersion, this.Folder, this.SearchPattern);
 		}
 	}
 }

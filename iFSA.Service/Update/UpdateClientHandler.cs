@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -30,7 +31,7 @@ namespace iFSA.Service.Update
 
 				if (data.Length != TransferHandler.NoData.Length)
 				{
-					return new UpdateVersion(data).Version;
+					return AppVersion.Create(data).Version;
 				}
 			}
 
@@ -50,19 +51,14 @@ namespace iFSA.Service.Update
 
 				if (data.Length != TransferHandler.NoData.Length)
 				{
-					var buffer = new byte[UpdateVersion.VersionNetworkBufferSize];
-					var versions = new AppVersion[data.Length / buffer.Length];
+					var versions = new List<AppVersion>();
 
 					using (var ms = new MemoryStream(data))
 					{
-						for (var i = 0; i < versions.Length; i++)
-						{
-							await ms.ReadAsync(buffer, 0, buffer.Length);
-							versions[i] = new UpdateVersion(buffer);
-						}
+						versions.Add(AppVersion.Create(ms));
 					}
 
-					return versions;
+					return versions.ToArray();
 				}
 			}
 
@@ -77,12 +73,12 @@ namespace iFSA.Service.Update
 			using (var s = client.GetStream())
 			{
 				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)UpdateMethods.UploadVersion);
-				await this.TransferHandler.WriteDataAsync(s, await this.TransferHandler.CompressAsync(await version.GetNetworkBufferAsync()));
+				await this.TransferHandler.WriteDataAsync(s, await this.TransferHandler.CompressAsync(version.NetworkBuffer));
 				await this.TransferHandler.WriteCloseAsync(s);
 			}
 		}
 
-		public async Task<byte[]> DownloadVersionAsync(TcpClient client, ClientVersion version)
+		public async Task<byte[]> DownloadVersionAsync(TcpClient client, AppVersion version)
 		{
 			if (client == null) throw new ArgumentNullException("client");
 			if (version == null) throw new ArgumentNullException("version");
@@ -90,7 +86,7 @@ namespace iFSA.Service.Update
 			using (var s = client.GetStream())
 			{
 				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)UpdateMethods.DownloadVersion);
-				await this.TransferHandler.WriteDataAsync(s, version.GetNetworkBuffer());
+				await this.TransferHandler.WriteDataAsync(s, version.NetworkBuffer);
 
 				var data = await this.TransferHandler.ReadDataAsync(s);
 				await this.TransferHandler.WriteCloseAsync(s);

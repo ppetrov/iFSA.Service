@@ -11,11 +11,18 @@ namespace iFSA.Service
 		private static readonly char SizeSeparator = '|';
 
 		private readonly byte[] _headerSize = new byte[4];
-		private readonly byte[] _buffer = new byte[16 * 4 * 1024];
+		private readonly byte[] _buffer;
 		private readonly Encoding _encoding = Encoding.Unicode;
 
 		private int _readBytes;
 		private decimal _totalBytes;
+
+		public PackageHandler(byte[] buffer)
+		{
+			if (buffer == null) throw new ArgumentNullException("buffer");
+
+			_buffer = buffer;
+		}
 
 		public event EventHandler<string> FileProgress;
 		private void OnFileProgress(string e)
@@ -31,16 +38,17 @@ namespace iFSA.Service
 			if (handler != null) handler(this, e);
 		}
 
-		public async Task<byte[]> PackAsync(byte[] clientBuffer, DirectoryInfo folder, string searchPattern)
+		public async Task<byte[]> PackAsync(AppVersion appVersion, DirectoryInfo folder, string searchPattern)
 		{
-			if (clientBuffer == null) throw new ArgumentNullException("clientBuffer");
+			if (appVersion == null) throw new ArgumentNullException("appVersion");
 			if (folder == null) throw new ArgumentNullException("folder");
 			if (searchPattern == null) throw new ArgumentNullException("searchPattern");
 
+			var versionBuffer = appVersion.NetworkBuffer;
 			var package = await ReadFolderAsync(folder, searchPattern);
-			using (var output = new MemoryStream(clientBuffer.Length + package.Item1.Length + package.Item2.Length + package.Item3.Length))
+			using (var output = new MemoryStream(versionBuffer.Length + package.Item1.Length + package.Item2.Length + package.Item3.Length))
 			{
-				await output.WriteAsync(clientBuffer, 0, clientBuffer.Length);
+				await output.WriteAsync(versionBuffer, 0, versionBuffer.Length);
 
 				await PackAsync(output, package.Item1, package.Item2, package.Item3);
 				return output.GetBuffer();

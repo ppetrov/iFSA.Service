@@ -13,6 +13,7 @@ namespace iFSA.Service
 		private readonly byte[] _byteBuffer = new byte[1];
 		private readonly byte[] _sizeBuffer = BitConverter.GetBytes(Convert.ToInt32(0));
 
+		internal byte[] Buffer { get { return _buffer; } }
 		public bool EnableCompression { get; set; }
 
 		public event EventHandler<decimal> WriteProgress;

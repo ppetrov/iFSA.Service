@@ -38,7 +38,6 @@
     <Compile Include="Update\UpdateClientHandler.cs" />
     <Compile Include="Update\UpdateServerHandler.cs" />
     <Compile Include="Logs\ClientLog.cs" />
-    <Compile Include="AppVersion.cs" />
     <Compile Include="Logs\LogsClientHandler.cs" />
     <Compile Include="ClientVersion.cs" />
     <Compile Include="Logs\LogMethods.cs" />

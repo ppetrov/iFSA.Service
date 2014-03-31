@@ -15,19 +15,15 @@ namespace iFSA.Service.Logs
 #endif
 		}
 
-		public async Task UploadLogsAsync(TcpClient client, ClientVersion clientVersion, ClientLog log)
+		public async Task UploadLogsAsync(TcpClient client, ClientLog log)
 		{
 			if (client == null) throw new ArgumentNullException("client");
-			if (clientVersion == null) throw new ArgumentNullException("clientVersion");
 			if (log == null) throw new ArgumentNullException("log");
-
-			var clientVersionBuffer = clientVersion.GetNetworkBuffer();
-			var buffer = await log.GetNetworkBufferAsync(clientVersionBuffer);
 
 			using (var s = client.GetStream())
 			{
 				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)LogMethods.UploadLogs);
-				await this.TransferHandler.WriteDataAsync(s, buffer);
+				await this.TransferHandler.WriteDataAsync(s, await log.GetNetworkBufferAsync(this.TransferHandler.Buffer));
 				await this.TransferHandler.WriteCloseAsync(s);
 			}
 		}

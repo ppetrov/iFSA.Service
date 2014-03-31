@@ -55,7 +55,6 @@ namespace ConsoleDemo
 
 			//Console.WriteLine(@"Done");
 
-
 			var hostname = @"127.0.0.1";
 			var port = 11111;
 
@@ -82,11 +81,11 @@ namespace ConsoleDemo
 			var uh = new LogsClientHandler(2);
 			using (var c = new TcpClient(hostname, port))
 			{
-				uh.UploadLogsAsync(c, new ClientVersion(platform, new Version(2, 2, 2, 2), @"PPetrov", @"secret"), new ClientLog(new DirectoryInfo(@"C:\temp\Logs"))).Wait();
+				uh.UploadLogsAsync(c, new ClientLog(new AppVersion(platform, new Version(2, 2, 2, 2), @"PPetrov", @"secret"), new DirectoryInfo(@"C:\temp\Logs"))).Wait();
 			}
 
 			Thread.Sleep(1000);
-			return;
+
 
 			Console.WriteLine(@"Get version for " + platform);
 			var h = new UpdateClientHandler(1);
@@ -122,14 +121,14 @@ namespace ConsoleDemo
 			Console.WriteLine(@"Upload version for " + platform);
 			using (var c = new TcpClient(hostname, port))
 			{
-				h.UploadVersionAsync(c, new UpdateVersion(platform, new Version(2, 2, 2, 2), GetPackage())).Wait();
+				h.UploadVersionAsync(c, new UpdateVersion(new AppVersion(platform, new Version(2, 2, 2, 2), "", ""), GetPackage())).Wait();
 			}
 
 			Thread.Sleep(1000);
 			Console.WriteLine(@"Upload version for " + platform);
 			using (var c = new TcpClient(hostname, port))
 			{
-				h.UploadVersionAsync(c, new UpdateVersion(ClientPlatform.WindowsMobile, new Version(3, 3, 3, 3), GetPackage())).Wait();
+				h.UploadVersionAsync(c, new UpdateVersion(new AppVersion(ClientPlatform.WindowsMobile, new Version(3, 3, 3, 3), "", ""), GetPackage())).Wait();
 			}
 
 
@@ -143,10 +142,14 @@ namespace ConsoleDemo
 			Thread.Sleep(1000);
 			using (var c = new TcpClient(hostname, port))
 			{
-				var package = h.GetVersionsAsync(c).Result;
-				if (package != null)
+				var versions = h.GetVersionsAsync(c).Result;
+				if (versions != null)
 				{
-					Console.WriteLine(package);
+					foreach (var v in versions)
+					{
+						Console.WriteLine(v);
+					}
+					Console.WriteLine();
 				}
 				else
 				{
@@ -158,7 +161,7 @@ namespace ConsoleDemo
 			Console.WriteLine(@"Download version for " + platform + " latest");
 			using (var c = new TcpClient(hostname, port))
 			{
-				var package = h.DownloadVersionAsync(c, new ClientVersion(platform, new Version(3, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03")).Result;
+				var package = h.DownloadVersionAsync(c, new AppVersion(platform, new Version(3, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03")).Result;
 				if (package != null)
 				{
 					Console.WriteLine("Client" + package.Length);
@@ -173,7 +176,7 @@ namespace ConsoleDemo
 			Console.WriteLine(@"Download version for " + platform + " old");
 			using (var c = new TcpClient(hostname, port))
 			{
-				var package = h.DownloadVersionAsync(c, new ClientVersion(platform, new Version(2, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03")).Result;
+				var package = h.DownloadVersionAsync(c, new AppVersion(platform, new Version(2, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03")).Result;
 				Console.WriteLine("Client" + package.Length);
 			}
 
@@ -190,7 +193,7 @@ namespace ConsoleDemo
 													 try
 													 {
 														 var th = new UpdateClientHandler(1);
-														 var v = new ClientVersion(ClientPlatform.WinRT, new Version(1, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03");
+														 var v = new AppVersion(ClientPlatform.WinRT, new Version(1, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03");
 														 for (int j = 0; j < 23; j++)
 														 {
 															 using (var c = new TcpClient(hostname, port))
