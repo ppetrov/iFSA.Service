@@ -1,6 +1,6 @@
 ﻿namespace iFSA.Service.Update
 {
-	public enum UpdateMethods
+	public enum UpdateMethod
 	{
 		GetVersion,
 		GetVersions,

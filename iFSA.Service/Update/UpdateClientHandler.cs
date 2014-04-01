@@ -23,7 +23,7 @@ namespace iFSA.Service.Update
 
 			using (var s = client.GetStream())
 			{
-				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)UpdateMethods.GetVersion);
+				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)UpdateMethod.GetVersion);
 				await this.TransferHandler.WriteDataAsync(s, BitConverter.GetBytes((int)platform));
 
 				var data = await this.TransferHandler.ReadDataAsync(s);
@@ -44,7 +44,7 @@ namespace iFSA.Service.Update
 
 			using (var s = client.GetStream())
 			{
-				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)UpdateMethods.GetVersions);
+				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)UpdateMethod.GetVersions);
 
 				var data = await this.TransferHandler.ReadDataAsync(s);
 				await this.TransferHandler.WriteCloseAsync(s);
@@ -72,7 +72,7 @@ namespace iFSA.Service.Update
 
 			using (var s = client.GetStream())
 			{
-				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)UpdateMethods.UploadVersion);
+				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)UpdateMethod.UploadVersion);
 				await this.TransferHandler.WriteDataAsync(s, await this.TransferHandler.CompressAsync(version.NetworkBuffer));
 				await this.TransferHandler.WriteCloseAsync(s);
 			}
@@ -85,7 +85,7 @@ namespace iFSA.Service.Update
 
 			using (var s = client.GetStream())
 			{
-				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)UpdateMethods.DownloadVersion);
+				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)UpdateMethod.DownloadVersion);
 				await this.TransferHandler.WriteDataAsync(s, version.NetworkBuffer);
 
 				var data = await this.TransferHandler.ReadDataAsync(s);

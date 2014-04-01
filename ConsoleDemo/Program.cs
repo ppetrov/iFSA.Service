@@ -83,6 +83,10 @@ namespace ConsoleDemo
 			{
 				uh.UploadLogsAsync(c, new ClientLog(new AppVersion(platform, new Version(2, 2, 2, 2), @"PPetrov", @"secret"), new DirectoryInfo(@"C:\temp\Logs"))).Wait();
 			}
+			using (var c = new TcpClient(hostname, port))
+			{
+				var data = uh.GetConfigsAsync(c).Result;
+			}
 
 			Thread.Sleep(1000);
 

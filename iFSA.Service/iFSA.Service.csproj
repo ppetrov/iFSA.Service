@@ -34,13 +34,13 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Update\UpdateMethods.cs" />
+    <Compile Include="Update\UpdateMethod.cs" />
     <Compile Include="Update\UpdateClientHandler.cs" />
     <Compile Include="Update\UpdateServerHandler.cs" />
     <Compile Include="Logs\ClientLog.cs" />
     <Compile Include="Logs\LogsClientHandler.cs" />
     <Compile Include="ClientVersion.cs" />
-    <Compile Include="Logs\LogMethods.cs" />
+    <Compile Include="Logs\LogMethod.cs" />
     <Compile Include="PackageHandler.cs" />
     <Compile Include="ClientPlatform.cs" />
     <Compile Include="Logs\LogsServerHandler.cs" />

@@ -87,7 +87,7 @@ namespace iFSA.Service
 				{
 					Directory.CreateDirectory(folderPath);
 				}
-				using (var output = File.OpenWrite(filePath))
+				using (var output = new FileStream(filePath, FileMode.Append))
 				{
 					await CopyAsync(input, output, size);
 				}

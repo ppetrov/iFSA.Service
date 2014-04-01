@@ -18,18 +18,18 @@ namespace iFSA.Service.Update
 			if (stream == null) throw new ArgumentNullException("stream");
 
 			var h = new TransferHandler { EnableCompression = false };
-			switch ((UpdateMethods)methodId)
+			switch ((UpdateMethod)methodId)
 			{
-				case UpdateMethods.GetVersion:
+				case UpdateMethod.GetVersion:
 					await this.GetVersionAsync(stream, h);
 					break;
-				case UpdateMethods.GetVersions:
+				case UpdateMethod.GetVersions:
 					await this.GetVersionsAsync(stream, h);
 					break;
-				case UpdateMethods.UploadVersion:
+				case UpdateMethod.UploadVersion:
 					await this.UploadVersionAsync(stream, h);
 					break;
-				case UpdateMethods.DownloadVersion:
+				case UpdateMethod.DownloadVersion:
 					await this.DownloadVersionAsync(stream, h);
 					break;
 				default:
@@ -76,14 +76,8 @@ namespace iFSA.Service.Update
 
 		private async Task UploadVersionAsync(Stream stream, TransferHandler handler)
 		{
-			var data = await handler.DecompressAsync(await handler.ReadDataAsync(stream));
-			using (var ms = new MemoryStream(data))
-			{
-				var version = AppVersion.Create(ms);
-				var package = new byte[data.Length - ms.Position];
-				Array.Copy(data, ms.Position, package, 0, package.Length);
-				this.Setup(new UpdateVersion(version, package));
-			}
+			var updateVersion = new UpdateVersion(await handler.DecompressAsync(await handler.ReadDataAsync(stream)));
+			_versions[(int)updateVersion.AppVersion.ClientPlatform] = updateVersion;
 		}
 
 		private async Task DownloadVersionAsync(Stream stream, TransferHandler handler)
@@ -98,11 +92,6 @@ namespace iFSA.Service.Update
 			}
 
 			await handler.WriteDataAsync(stream, networkBuffer);
-		}
-
-		private void Setup(UpdateVersion updateVersion)
-		{
-			_versions[(int)updateVersion.AppVersion.ClientPlatform] = updateVersion;
 		}
 	}
 }

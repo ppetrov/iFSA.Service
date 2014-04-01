@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace iFSA.Service
 {
@@ -45,46 +44,6 @@ namespace iFSA.Service
 
 				_networkBuffer = ms.GetBuffer();
 			}
-		}
-
-		//public void Write(Stream stream)
-		//{
-		//	if (stream == null) throw new ArgumentNullException("stream");
-
-		//	var buffer = BitConverter.GetBytes((int)this.ClientPlatform);
-		//	stream.Write(buffer, 0, buffer.Length);
-
-		//	buffer = BitConverter.GetBytes(this.Version.Major);
-		//	stream.Write(buffer, 0, buffer.Length);
-
-		//	buffer = BitConverter.GetBytes(this.Version.Minor);
-		//	stream.Write(buffer, 0, buffer.Length);
-
-		//	buffer = BitConverter.GetBytes(this.Version.Build);
-		//	stream.Write(buffer, 0, buffer.Length);
-
-		//	buffer = BitConverter.GetBytes(this.Version.Revision);
-		//	stream.Write(buffer, 0, buffer.Length);
-		//}
-
-		public async Task WriteAsync(Stream stream)
-		{
-			if (stream == null) throw new ArgumentNullException("stream");
-
-			var buffer = BitConverter.GetBytes((int)this.ClientPlatform);
-			await stream.WriteAsync(buffer, 0, buffer.Length);
-
-			buffer = BitConverter.GetBytes(this.Version.Major);
-			await stream.WriteAsync(buffer, 0, buffer.Length);
-
-			buffer = BitConverter.GetBytes(this.Version.Minor);
-			await stream.WriteAsync(buffer, 0, buffer.Length);
-
-			buffer = BitConverter.GetBytes(this.Version.Build);
-			await stream.WriteAsync(buffer, 0, buffer.Length);
-
-			buffer = BitConverter.GetBytes(this.Version.Revision);
-			await stream.WriteAsync(buffer, 0, buffer.Length);
 		}
 
 		public static AppVersion Create(byte[] input)

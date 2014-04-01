@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using iFSA.Service.Update;
 
 namespace iFSA.Service.Logs
 {
@@ -27,5 +28,15 @@ namespace iFSA.Service.Logs
 
 			return await new PackageHandler(buffer).PackAsync(this.AppVersion, this.Folder, this.SearchPattern);
 		}
+	}
+
+
+	public sealed class LogConfig
+	{
+		public UpdateMethod UpdateMethod { get; private set; }
+		public ClientPlatform Platform { get; private set; }
+		public DirectoryInfo Folder { get; private set; }
+
+
 	}
 }

@@ -15,6 +15,27 @@ namespace iFSA.Service.Logs
 #endif
 		}
 
+		public async Task<LogConfig[]> GetConfigsAsync(TcpClient client)
+		{
+			if (client == null) throw new ArgumentNullException("client");
+
+			using (var s = client.GetStream())
+			{
+				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)LogMethod.GetConfigs);
+
+				var data = await this.TransferHandler.ReadDataAsync(s);
+
+				await this.TransferHandler.WriteCloseAsync(s);
+
+				if (data.Length != TransferHandler.NoData.Length)
+				{
+
+				}
+			}
+
+			return null;
+		}
+
 		public async Task UploadLogsAsync(TcpClient client, ClientLog log)
 		{
 			if (client == null) throw new ArgumentNullException("client");
@@ -22,7 +43,7 @@ namespace iFSA.Service.Logs
 
 			using (var s = client.GetStream())
 			{
-				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)LogMethods.UploadLogs);
+				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)LogMethod.UploadLogs);
 				await this.TransferHandler.WriteDataAsync(s, await log.GetNetworkBufferAsync(this.TransferHandler.Buffer));
 				await this.TransferHandler.WriteCloseAsync(s);
 			}
