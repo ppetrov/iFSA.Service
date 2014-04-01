@@ -64,18 +64,20 @@ namespace iFSA.Service
 					using (var s = client.GetStream())
 					{
 						s.ReadTimeout = (int)TimeSpan.FromSeconds(45).TotalMilliseconds;
-
-						var value = s.ReadByte();
-						if (value != -1)
+						int value;
+						do
 						{
-							var handleId = (byte)value;
 							value = s.ReadByte();
-							if (value != -1)
+							if (value != -1 && value != byte.MaxValue)
 							{
-								await _handlers[handleId].ProcessAsync(s, (byte)value);
-								s.ReadByte();
+								var handleId = (byte)value;
+								value = s.ReadByte();
+								if (value != -1 && value != byte.MaxValue)
+								{
+									await _handlers[handleId].ProcessAsync(s, (byte)value);
+								}
 							}
-						}
+						} while (value != -1 && value != byte.MaxValue);
 					}
 				}
 			}

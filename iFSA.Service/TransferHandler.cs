@@ -12,9 +12,15 @@ namespace iFSA.Service
 		private readonly byte[] _buffer = new byte[16 * 1024];
 		private readonly byte[] _byteBuffer = new byte[1];
 		private readonly byte[] _sizeBuffer = BitConverter.GetBytes(Convert.ToInt32(0));
+		private bool _enableCompression = true;
 
 		internal byte[] Buffer { get { return _buffer; } }
-		public bool EnableCompression { get; set; }
+
+		public bool EnableCompression
+		{
+			get { return _enableCompression; }
+			set { _enableCompression = value; }
+		}
 
 		public event EventHandler<decimal> WriteProgress;
 		private void OnWriteProgress(decimal e)
@@ -28,11 +34,6 @@ namespace iFSA.Service
 		{
 			var handler = ReadProgress;
 			if (handler != null) handler(this, e);
-		}
-
-		public TransferHandler()
-		{
-			this.EnableCompression = true;
 		}
 
 		public async Task<byte[]> CompressAsync(byte[] data)
@@ -95,12 +96,12 @@ namespace iFSA.Service
 			await stream.WriteAsync(_byteBuffer, 0, _byteBuffer.Length);
 		}
 
-		public async Task WriteCloseAsync(Stream stream)
+		public void WriteClose(Stream stream)
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
 			_byteBuffer[0] = byte.MaxValue;
-			await stream.WriteAsync(_byteBuffer, 0, _byteBuffer.Length);
+			stream.Write(_byteBuffer, 0, _byteBuffer.Length);
 		}
 
 		public async Task WriteDataAsync(Stream stream, byte[] input)

@@ -2,7 +2,7 @@
 {
 	public enum ClientPlatform
 	{
-		WindowsMobile,
+		WinMobile,
 		IPad,
 		WinRT
 	}

@@ -125,8 +125,7 @@ namespace iFSA.Service.Logs
 		{
 			for (var i = 0; i < folders.Count; i++)
 			{
-				var header = new RequestHeader((ClientPlatform)i, RequestHeader.EmptyVersion, string.Empty, string.Empty);
-				NetworkHelper.WriteRaw(stream, new LogConfig(header, method, folders[i] ?? string.Empty).NetworkBuffer);
+				NetworkHelper.WriteRaw(stream, new LogConfig(new RequestHeader((ClientPlatform)i), method, folders[i] ?? string.Empty).NetworkBuffer);
 			}
 		}
 
@@ -136,9 +135,6 @@ namespace iFSA.Service.Logs
 			{
 				var header = new RequestHeader().Setup(ms);
 				var folder = folders[(int)header.ClientPlatform];
-#if DEBUG
-				folder = folder ?? new DirectoryInfo(@"C:\temp\Logs2");
-#endif
 				if (folder != null)
 				{
 					var userFolder = new DirectoryInfo(Path.Combine(folder, header.Username));

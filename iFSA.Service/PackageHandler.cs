@@ -69,12 +69,12 @@ namespace iFSA.Service
 			}
 			foreach (var fileHeader in _encoding.GetString(headerBuffer, 0, headerBuffer.Length).Split(FileSeparator))
 			{
-				var fileName = fileHeader.Substring(0, fileHeader.IndexOf(SizeSeparator));
-				var size = int.Parse(fileHeader.Substring(fileName.Length + 1));
+				var name = fileHeader.Substring(0, fileHeader.IndexOf(SizeSeparator));
+				var size = int.Parse(fileHeader.Substring(name.Length + 1));
 
-				this.OnFileProgress(fileName);
+				this.OnFileProgress(name);
 
-				var filePath = Path.Combine(folder.FullName, fileName);
+				var filePath = Path.Combine(folder.FullName, name);
 				var folderPath = Path.GetDirectoryName(filePath);
 				if (!Directory.Exists(folderPath))
 				{
@@ -97,8 +97,8 @@ namespace iFSA.Service
 				foreach (var f in clientFiles)
 				{
 					var file = f.File;
-					var fileName = file.FullName;
-					this.OnFileProgress(fileName);
+					var name = Path.GetFileName(file.FullName);
+					this.OnFileProgress(name);
 
 					var size = Convert.ToInt32(file.Length);
 					output.Capacity += size;
@@ -110,7 +110,7 @@ namespace iFSA.Service
 					{
 						header.Append(FileSeparator);
 					}
-					header.Append(fileName);
+					header.Append(name);
 					header.Append(SizeSeparator);
 					header.Append(size);
 				}

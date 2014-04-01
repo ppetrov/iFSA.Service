@@ -4,7 +4,7 @@
 	{
 		GetVersion,
 		GetVersions,
-		UploadVersion,
-		DownloadVersion,
+		UploadPackage,
+		DownloadPackage,
 	}
 }

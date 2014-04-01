@@ -26,11 +26,11 @@ namespace iFSA.Service.Update
 				case UpdateMethod.GetVersions:
 					await this.GetVersionsAsync(stream, h);
 					break;
-				case UpdateMethod.UploadVersion:
-					await this.UploadVersionAsync(stream, h);
+				case UpdateMethod.UploadPackage:
+					await this.UploadPackageAsync(stream, h);
 					break;
-				case UpdateMethod.DownloadVersion:
-					await this.DownloadVersionAsync(stream, h);
+				case UpdateMethod.DownloadPackage:
+					await this.DownloadPackageAsync(stream, h);
 					break;
 				default:
 					throw new ArgumentOutOfRangeException();
@@ -74,7 +74,7 @@ namespace iFSA.Service.Update
 			await handler.WriteDataAsync(stream, networkBuffer);
 		}
 
-		private async Task UploadVersionAsync(Stream stream, TransferHandler handler)
+		private async Task UploadPackageAsync(Stream stream, TransferHandler handler)
 		{
 			using (var ms = new MemoryStream())
 			{
@@ -87,7 +87,7 @@ namespace iFSA.Service.Update
 			}
 		}
 
-		private async Task DownloadVersionAsync(Stream stream, TransferHandler handler)
+		private async Task DownloadPackageAsync(Stream stream, TransferHandler handler)
 		{
 			var networkBuffer = TransferHandler.NoData;
 

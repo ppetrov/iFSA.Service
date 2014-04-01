@@ -15,6 +15,16 @@ namespace iFSA.Service
 
 		public RequestHeader() { }
 
+		public RequestHeader(ClientPlatform clientPlatform)
+			: this(clientPlatform, EmptyVersion, string.Empty, string.Empty)
+		{
+		}
+
+		public RequestHeader(ClientPlatform clientPlatform, string username, string password)
+			: this(clientPlatform, EmptyVersion, username, password)
+		{
+		}
+
 		public RequestHeader(ClientPlatform clientPlatform, Version version, string username, string password)
 		{
 			if (version == null) throw new ArgumentNullException("version");
