@@ -4,8 +4,10 @@
 	{
 		GetConfigs,
 		ConfigureLogs,
+		ConfigureFiles,
 		ConfigureDatabase,
 		UploadLogs,
+		UploadFiles,
 		UploadDatabase,
 	}
 }

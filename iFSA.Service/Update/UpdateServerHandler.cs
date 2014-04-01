@@ -6,7 +6,7 @@ namespace iFSA.Service.Update
 {
 	public sealed class UpdateServerHandler : ServerHandlerBase
 	{
-		private readonly UpdateVersion[] _versions = new UpdateVersion[3];
+		private readonly RequestPackage[] _packages = new RequestPackage[3];
 
 		public UpdateServerHandler(byte id)
 			: base(id)
@@ -41,10 +41,10 @@ namespace iFSA.Service.Update
 		{
 			var networkBuffer = TransferHandler.NoData;
 
-			var version = _versions[BitConverter.ToInt32(await handler.ReadDataAsync(stream), 0)];
-			if (version != null)
+			var package = _packages[BitConverter.ToInt32(await handler.ReadDataAsync(stream), 0)];
+			if (package != null)
 			{
-				networkBuffer = version.AppVersion.NetworkBuffer;
+				networkBuffer = package.RequestHeader.NetworkBuffer;
 			}
 
 			await handler.WriteDataAsync(stream, networkBuffer);
@@ -56,11 +56,11 @@ namespace iFSA.Service.Update
 
 			using (var ms = new MemoryStream())
 			{
-				foreach (var v in _versions)
+				foreach (var v in _packages)
 				{
 					if (v != null)
 					{
-						var buffer = v.AppVersion.NetworkBuffer;
+						var buffer = v.RequestHeader.NetworkBuffer;
 						ms.Capacity += buffer.Length;
 						ms.Write(buffer, 0, buffer.Length);
 					}
@@ -76,19 +76,26 @@ namespace iFSA.Service.Update
 
 		private async Task UploadVersionAsync(Stream stream, TransferHandler handler)
 		{
-			var updateVersion = new UpdateVersion(await handler.DecompressAsync(await handler.ReadDataAsync(stream)));
-			_versions[(int)updateVersion.AppVersion.ClientPlatform] = updateVersion;
+			using (var ms = new MemoryStream())
+			{
+				var data = await handler.DecompressAsync(await handler.ReadDataAsync(stream));
+				ms.Write(data, 0, data.Length);
+				ms.Position = 0;
+
+				var package = new RequestPackage().Setup(ms);
+				_packages[(int)package.RequestHeader.ClientPlatform] = package;
+			}
 		}
 
 		private async Task DownloadVersionAsync(Stream stream, TransferHandler handler)
 		{
 			var networkBuffer = TransferHandler.NoData;
 
-			var clientVersion = AppVersion.Create(await handler.ReadDataAsync(stream));
-			var updateVersion = _versions[(int)clientVersion.ClientPlatform];
-			if (updateVersion != null && updateVersion.AppVersion.Version > clientVersion.Version)
+			var header = new RequestHeader().Setup(new MemoryStream(await handler.ReadDataAsync(stream)));
+			var package = _packages[(int)header.ClientPlatform];
+			if (package != null && package.RequestHeader.Version > header.Version)
 			{
-				networkBuffer = updateVersion.Package;
+				networkBuffer = package.Package;
 			}
 
 			await handler.WriteDataAsync(stream, networkBuffer);

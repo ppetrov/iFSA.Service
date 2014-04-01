@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -38,33 +39,20 @@ namespace iFSA.Service
 			if (handler != null) handler(this, e);
 		}
 
-		public async Task<byte[]> PackAsync(AppVersion appVersion, DirectoryInfo folder, string searchPattern)
+		public async Task<byte[]> PackAsync(ClientFile[] files)
 		{
-			if (appVersion == null) throw new ArgumentNullException("appVersion");
-			if (folder == null) throw new ArgumentNullException("folder");
-			if (searchPattern == null) throw new ArgumentNullException("searchPattern");
+			if (files == null) throw new ArgumentNullException("files");
+			if (files.Length == 0) throw new ArgumentOutOfRangeException("files");
 
-			var versionBuffer = appVersion.NetworkBuffer;
-			var package = await ReadFolderAsync(folder, searchPattern);
-			using (var output = new MemoryStream(versionBuffer.Length + package.Item1.Length + package.Item2.Length + package.Item3.Length))
+			var package = await ReadFolderAsync(files);
+			using (var output = new MemoryStream(package.Item1.Length + package.Item2.Length + package.Item3.Length))
 			{
-				await output.WriteAsync(versionBuffer, 0, versionBuffer.Length);
-
 				await PackAsync(output, package.Item1, package.Item2, package.Item3);
 				return output.GetBuffer();
 			}
 		}
 
-		public async Task PackAsync(DirectoryInfo folder, Stream output)
-		{
-			if (folder == null) throw new ArgumentNullException("folder");
-			if (output == null) throw new ArgumentNullException("output");
-
-			var package = await ReadFolderAsync(folder, @"*");
-			await PackAsync(output, package.Item1, package.Item2, package.Item3);
-		}
-
-		public async Task UnpackAsync(Stream input, DirectoryInfo folder)
+		public async Task UnpackAsync(Stream input, DirectoryInfo folder, bool append)
 		{
 			if (input == null) throw new ArgumentNullException("input");
 			if (folder == null) throw new ArgumentNullException("folder");
@@ -74,6 +62,11 @@ namespace iFSA.Service
 			var headerBuffer = new byte[BitConverter.ToInt32(_headerSize, 0)];
 			await input.ReadAsync(headerBuffer, 0, headerBuffer.Length);
 
+			var mode = FileMode.Create;
+			if (append)
+			{
+				mode = FileMode.Append;
+			}
 			foreach (var fileHeader in _encoding.GetString(headerBuffer, 0, headerBuffer.Length).Split(FileSeparator))
 			{
 				var fileName = fileHeader.Substring(0, fileHeader.IndexOf(SizeSeparator));
@@ -87,25 +80,26 @@ namespace iFSA.Service
 				{
 					Directory.CreateDirectory(folderPath);
 				}
-				using (var output = new FileStream(filePath, FileMode.Append))
+
+				using (var output = new FileStream(filePath, mode))
 				{
 					await CopyAsync(input, output, size);
 				}
 			}
 		}
 
-		private async Task<Tuple<byte[], byte[], byte[]>> ReadFolderAsync(FileSystemInfo folder, string searchPattern)
+		private async Task<Tuple<byte[], byte[], byte[]>> ReadFolderAsync(IEnumerable<ClientFile> clientFiles)
 		{
 			using (var output = new MemoryStream())
 			{
 				var header = new StringBuilder();
-				var offset = folder.FullName.Length + 1;
 
-				foreach (var fileName in Directory.EnumerateFiles(folder.FullName, searchPattern, SearchOption.AllDirectories))
+				foreach (var f in clientFiles)
 				{
+					var file = f.File;
+					var fileName = file.FullName;
 					this.OnFileProgress(fileName);
 
-					var file = new FileInfo(fileName);
 					var size = Convert.ToInt32(file.Length);
 					output.Capacity += size;
 
@@ -116,7 +110,7 @@ namespace iFSA.Service
 					{
 						header.Append(FileSeparator);
 					}
-					header.Append(fileName.Substring(offset));
+					header.Append(fileName);
 					header.Append(SizeSeparator);
 					header.Append(size);
 				}

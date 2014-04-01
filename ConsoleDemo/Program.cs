@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -48,7 +49,7 @@ namespace ConsoleDemo
 			//	{
 			//		f.Delete(true);
 			//	}
-			//	f.Create();
+			//	f.Setup();
 			//	ph.UnpackAsync(s, f).Wait();
 			//}
 
@@ -75,17 +76,49 @@ namespace ConsoleDemo
 			});
 
 
+			var uh = new LogsClientHandler(2);
+			//Thread.Sleep(1000);
+			//Console.WriteLine(@"Get log configs");
+			//using (var c = new TcpClient(hostname, port))
+			//{
+			//	var configs = uh.GetConfigsAsync(c).Result;
+			//	foreach (var cfg in configs)
+			//	{
+			//		var folder = cfg.Folder;
+			//		if (folder == string.Empty)
+			//		{
+			//			folder = @"N/A";
+			//		}
+			//		Console.WriteLine(cfg.RequestHeader.ClientPlatform.ToString().PadRight(15) + " " + folder);
+			//	}
+			//}
+
 			var platform = ClientPlatform.WinRT;
 			Thread.Sleep(1000);
-			Console.WriteLine(@"Upload logs for " + platform);
-			var uh = new LogsClientHandler(2);
+			Console.WriteLine(@"Configure logs for " + platform);
+			
 			using (var c = new TcpClient(hostname, port))
 			{
-				uh.UploadLogsAsync(c, new ClientLog(new AppVersion(platform, new Version(2, 2, 2, 2), @"PPetrov", @"secret"), new DirectoryInfo(@"C:\temp\Logs"))).Wait();
+				uh.ConfigureAsync(c, new LogConfig(new RequestHeader(platform, new Version(), string.Empty, string.Empty), LogMethod.ConfigureLogs, @"C:\temp\server\")).Wait();
 			}
+
+			Thread.Sleep(1000);
+			Console.WriteLine(@"Upload logs for " + platform);
 			using (var c = new TcpClient(hostname, port))
 			{
-				var data = uh.GetConfigsAsync(c).Result;
+				var uploaded = uh.UploadLogsAsync(c, new RequestHeader(platform, new Version(2, 2, 2, 2), @"PPetrov", @"secret"), new DirectoryInfo(@"C:\temp\Logs").GetFiles(@"*.txt").Select(f => new ClientFile(f)).ToArray()).Result;
+				Console.WriteLine(uploaded);
+			}
+
+			Thread.Sleep(1000);
+			Console.WriteLine(@"Get log configs");
+			using (var c = new TcpClient(hostname, port))
+			{
+				var configs = uh.GetConfigsAsync(c).Result;
+				foreach (var cfg in configs)
+				{
+					Console.WriteLine(cfg.RequestHeader.ClientPlatform + " " + cfg.Folder);
+				}
 			}
 
 			Thread.Sleep(1000);
@@ -116,7 +149,7 @@ namespace ConsoleDemo
 				}
 				else
 				{
-					Console.WriteLine(@"No versions is available");
+					Console.WriteLine(@"No versions available");
 				}
 			}
 
@@ -125,14 +158,14 @@ namespace ConsoleDemo
 			Console.WriteLine(@"Upload version for " + platform);
 			using (var c = new TcpClient(hostname, port))
 			{
-				h.UploadVersionAsync(c, new UpdateVersion(new AppVersion(platform, new Version(2, 2, 2, 2), "", ""), GetPackage())).Wait();
+				h.UploadVersionAsync(c, new RequestPackage(new RequestHeader(platform, new Version(2, 2, 2, 2), "", ""), GetPackage())).Wait();
 			}
 
 			Thread.Sleep(1000);
 			Console.WriteLine(@"Upload version for " + platform);
 			using (var c = new TcpClient(hostname, port))
 			{
-				h.UploadVersionAsync(c, new UpdateVersion(new AppVersion(ClientPlatform.WindowsMobile, new Version(3, 3, 3, 3), "", ""), GetPackage())).Wait();
+				h.UploadVersionAsync(c, new RequestPackage(new RequestHeader(ClientPlatform.WindowsMobile, new Version(3, 3, 3, 3), "", ""), GetPackage())).Wait();
 			}
 
 
@@ -165,7 +198,7 @@ namespace ConsoleDemo
 			Console.WriteLine(@"Download version for " + platform + " latest");
 			using (var c = new TcpClient(hostname, port))
 			{
-				var package = h.DownloadVersionAsync(c, new AppVersion(platform, new Version(3, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03")).Result;
+				var package = h.DownloadVersionAsync(c, new RequestHeader(platform, new Version(3, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03")).Result;
 				if (package != null)
 				{
 					Console.WriteLine("Client" + package.Length);
@@ -180,7 +213,7 @@ namespace ConsoleDemo
 			Console.WriteLine(@"Download version for " + platform + " old");
 			using (var c = new TcpClient(hostname, port))
 			{
-				var package = h.DownloadVersionAsync(c, new AppVersion(platform, new Version(2, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03")).Result;
+				var package = h.DownloadVersionAsync(c, new RequestHeader(platform, new Version(2, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03")).Result;
 				Console.WriteLine("Client" + package.Length);
 			}
 
@@ -197,7 +230,7 @@ namespace ConsoleDemo
 													 try
 													 {
 														 var th = new UpdateClientHandler(1);
-														 var v = new AppVersion(ClientPlatform.WinRT, new Version(1, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03");
+														 var v = new RequestHeader(ClientPlatform.WinRT, new Version(1, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03");
 														 for (int j = 0; j < 23; j++)
 														 {
 															 using (var c = new TcpClient(hostname, port))

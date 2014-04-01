@@ -31,14 +31,14 @@ namespace iFSA.Service.Update
 
 				if (data.Length != TransferHandler.NoData.Length)
 				{
-					return AppVersion.Create(data).Version;
+					return new RequestHeader().Setup(new MemoryStream(data)).Version;
 				}
 			}
 
 			return null;
 		}
 
-		public async Task<AppVersion[]> GetVersionsAsync(TcpClient client)
+		public async Task<RequestHeader[]> GetVersionsAsync(TcpClient client)
 		{
 			if (client == null) throw new ArgumentNullException("client");
 
@@ -51,34 +51,37 @@ namespace iFSA.Service.Update
 
 				if (data.Length != TransferHandler.NoData.Length)
 				{
-					var versions = new List<AppVersion>();
+					var headers = new List<RequestHeader>();
 
 					using (var ms = new MemoryStream(data))
 					{
-						versions.Add(AppVersion.Create(ms));
+						while (ms.Position != ms.Length)
+						{
+							headers.Add(new RequestHeader().Setup(ms));
+						}
 					}
 
-					return versions.ToArray();
+					return headers.ToArray();
 				}
 			}
 
 			return null;
 		}
 
-		public async Task UploadVersionAsync(TcpClient client, UpdateVersion version)
+		public async Task UploadVersionAsync(TcpClient client, RequestPackage package)
 		{
 			if (client == null) throw new ArgumentNullException("client");
-			if (version == null) throw new ArgumentNullException("version");
+			if (package == null) throw new ArgumentNullException("package");
 
 			using (var s = client.GetStream())
 			{
 				await this.TransferHandler.WriteMethodAsync(s, this.Id, (byte)UpdateMethod.UploadVersion);
-				await this.TransferHandler.WriteDataAsync(s, await this.TransferHandler.CompressAsync(version.NetworkBuffer));
+				await this.TransferHandler.WriteDataAsync(s, await this.TransferHandler.CompressAsync(package.NetworkBuffer));
 				await this.TransferHandler.WriteCloseAsync(s);
 			}
 		}
 
-		public async Task<byte[]> DownloadVersionAsync(TcpClient client, AppVersion version)
+		public async Task<byte[]> DownloadVersionAsync(TcpClient client, RequestHeader version)
 		{
 			if (client == null) throw new ArgumentNullException("client");
 			if (version == null) throw new ArgumentNullException("version");

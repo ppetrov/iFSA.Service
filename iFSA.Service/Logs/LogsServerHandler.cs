@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace iFSA.Service.Logs
 {
 	public sealed class LogsServerHandler : ServerHandlerBase
 	{
-		private readonly DirectoryInfo[] _dbFolders = new DirectoryInfo[3];
-		private readonly DirectoryInfo[] _logFolders = new DirectoryInfo[3];
+		private readonly string[] _dbFolders = new string[3];
+		private readonly string[] _logFolders = new string[3];
+		private readonly string[] _filesFolders = new string[3];
 
 		public LogsServerHandler(byte id)
 			: base(id)
@@ -29,11 +29,17 @@ namespace iFSA.Service.Logs
 				case LogMethod.ConfigureLogs:
 					await this.ConfigureLogsAsync(stream, h);
 					break;
+				case LogMethod.ConfigureFiles:
+					await this.ConfigureFilesAsync(stream, h);
+					break;
 				case LogMethod.ConfigureDatabase:
 					await this.ConfigureDatabaseAsync(stream, h);
 					break;
 				case LogMethod.UploadLogs:
 					await this.UploadLogsAsync(stream, h);
+					break;
+				case LogMethod.UploadFiles:
+					await this.UploadFilesAsync(stream, h);
 					break;
 				case LogMethod.UploadDatabase:
 					await this.UploadDatabaseAsync(stream, h);
@@ -47,97 +53,105 @@ namespace iFSA.Service.Logs
 		{
 			using (var ms = new MemoryStream())
 			{
-				var emptyVersion = new Version();
-
-				this.Write(ms, _logFolders, emptyVersion, LogMethod.UploadLogs);
-				this.Write(ms, _dbFolders, emptyVersion, LogMethod.UploadDatabase);
+				this.Write(ms, _dbFolders, LogMethod.UploadDatabase);
+				this.Write(ms, _logFolders, LogMethod.UploadLogs);
+				this.Write(ms, _filesFolders, LogMethod.UploadFiles);
 
 				await handler.WriteDataAsync(stream, ms.ToArray());
 			}
 		}
 
-
-
 		private async Task ConfigureLogsAsync(Stream stream, TransferHandler handler)
 		{
-			this.Setup(_logFolders, await handler.ReadDataAsync(stream));
+			this.Configure(await handler.ReadDataAsync(stream));
+		}
+
+		private async Task ConfigureFilesAsync(Stream stream, TransferHandler handler)
+		{
+			this.Configure(await handler.ReadDataAsync(stream));
 		}
 
 		private async Task ConfigureDatabaseAsync(Stream stream, TransferHandler handler)
 		{
-			this.Setup(_dbFolders, await handler.ReadDataAsync(stream));
+			this.Configure(await handler.ReadDataAsync(stream));
 		}
 
 		private async Task UploadLogsAsync(Stream stream, TransferHandler handler)
 		{
-			var data = await handler.ReadDataAsync(stream);
+			var success = await Upload(handler, await handler.ReadDataAsync(stream), _logFolders, true);
+			await handler.WriteDataAsync(stream, BitConverter.GetBytes(Convert.ToInt32(success)));
+		}
 
+		private async Task UploadFilesAsync(Stream stream, TransferHandler handler)
+		{
+			var success = await Upload(handler, await handler.ReadDataAsync(stream), _filesFolders, false);
+			await handler.WriteDataAsync(stream, BitConverter.GetBytes(Convert.ToInt32(success)));
+		}
+
+		private async Task UploadDatabaseAsync(Stream stream, TransferHandler handler)
+		{
+			var success = await Upload(handler, await handler.ReadDataAsync(stream), _dbFolders, false);
+			await handler.WriteDataAsync(stream, BitConverter.GetBytes(Convert.ToInt32(success)));
+		}
+
+		private void Configure(byte[] data)
+		{
 			using (var ms = new MemoryStream(data))
 			{
-				var appVersion = AppVersion.Create(ms);
-				var folder = _logFolders[(int)appVersion.ClientPlatform];
+				var logConfig = new LogConfig().Setup(ms);
+				var folders = GetConfigFolders(logConfig);
+				folders[(int)logConfig.RequestHeader.ClientPlatform] = logConfig.Folder;
+			}
+		}
+
+		private string[] GetConfigFolders(LogConfig logConfig)
+		{
+			if (logConfig.LogMethod == LogMethod.ConfigureLogs)
+			{
+				return _logFolders;
+			}
+			if (logConfig.LogMethod == LogMethod.ConfigureFiles)
+			{
+				return _filesFolders;
+			}
+			if (logConfig.LogMethod == LogMethod.ConfigureDatabase)
+			{
+				return _dbFolders;
+			}
+			throw new ArgumentOutOfRangeException();
+		}
+
+		private void Write(Stream stream, IList<string> folders, LogMethod method)
+		{
+			for (var i = 0; i < folders.Count; i++)
+			{
+				var header = new RequestHeader((ClientPlatform)i, RequestHeader.EmptyVersion, string.Empty, string.Empty);
+				NetworkHelper.WriteRaw(stream, new LogConfig(header, method, folders[i] ?? string.Empty).NetworkBuffer);
+			}
+		}
+
+		private static async Task<bool> Upload(TransferHandler handler, byte[] data, string[] folders, bool append)
+		{
+			using (var ms = new MemoryStream(data))
+			{
+				var header = new RequestHeader().Setup(ms);
+				var folder = folders[(int)header.ClientPlatform];
 #if DEBUG
 				folder = folder ?? new DirectoryInfo(@"C:\temp\Logs2");
 #endif
 				if (folder != null)
 				{
-					var userFolder = new DirectoryInfo(Path.Combine(folder.FullName, appVersion.Username));
+					var userFolder = new DirectoryInfo(Path.Combine(folder, header.Username));
 					if (!userFolder.Exists)
 					{
 						userFolder.Create();
 					}
-					await new PackageHandler(handler.Buffer).UnpackAsync(ms, userFolder);
+					await new PackageHandler(handler.Buffer).UnpackAsync(ms, userFolder, append);
+					return true;
 				}
 			}
+
+			return false;
 		}
-
-		private async Task UploadDatabaseAsync(Stream stream, TransferHandler handler)
-		{
-			//var data = await handler.DecompressAsync(await handler.ReadDataAsync(stream));
-			//this.Setup(new UpdateVersion(data));
-		}
-
-		private void Setup(DirectoryInfo[] folders, byte[] data)
-		{
-			using (var ms = new MemoryStream(data))
-			{
-				var appVersion = AppVersion.Create(ms);
-
-				var buffer = new byte[data.Length - ms.Position];
-				ms.Read(buffer, 0, buffer.Length);
-
-				folders[(int)appVersion.ClientPlatform] = new DirectoryInfo(Encoding.Unicode.GetString(buffer));
-			}
-		}
-
-		private void Write(Stream stream, IList<DirectoryInfo> folders, Version emptyVersion, LogMethod method)
-		{
-			//for (var i = 0; i < folders.Count; i++)
-			//{
-			//	var folder = folders[i];
-			//	var version = new AppVersion((ClientPlatform)i, emptyVersion, string.Empty, string.Empty);
-			//	var buffer = new ClientLog(version, folder).GetVersionNetworkBuffer(methods);
-			//	stream.Write(buffer, 0, buffer.Length);
-			//}
-		}
-
-		//public byte[] GetVersionNetworkBuffer(LogMethods methods)
-		//{
-		//	var path = this.Folder.FullName;
-		//	var methodBuffer = BitConverter.GetBytes((int)methods);
-		//	var platformBuffer = BitConverter.GetBytes((int)this.AppVersion.ClientPlatform);
-		//	var pathLengthBuffer = BitConverter.GetBytes(path.Length);
-		//	var pathDataBuffer = Encoding.Unicode.GetBytes(path);
-
-		//	using (var ms = new MemoryStream(methodBuffer.Length + platformBuffer.Length + pathLengthBuffer.Length + pathDataBuffer.Length))
-		//	{
-		//		ms.Write(methodBuffer, 0, methodBuffer.Length);
-		//		ms.Write(platformBuffer, 0, platformBuffer.Length);
-		//		ms.Write(pathLengthBuffer, 0, pathLengthBuffer.Length);
-		//		ms.Write(pathDataBuffer, 0, pathDataBuffer.Length);
-
-		//		return ms.GetBuffer();
-		//	}
-		//}
 	}
 }
