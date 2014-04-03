@@ -6,6 +6,9 @@ namespace iFSA.Service
 {
 	public static class NetworkHelper
 	{
+		public const int IntBytes = 4;
+		public const int VersionBytes = 4 * IntBytes;
+
 		public static void Write(Stream stream, int value)
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
@@ -61,8 +64,9 @@ namespace iFSA.Service
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 			if (buffer == null) throw new ArgumentNullException("buffer");
+			if (buffer.Length < IntBytes) throw new ArgumentOutOfRangeException("buffer");
 
-			stream.Read(buffer, 0, buffer.Length);
+			stream.Read(buffer, 0, IntBytes);
 			return BitConverter.ToInt32(buffer, 0);
 		}
 
@@ -83,30 +87,46 @@ namespace iFSA.Service
 			return buffer.Length;
 		}
 
-		public static int GetNetworkSize(int value)
+		public static int GetBytesSize(int value)
 		{
-			return 4;
+			return IntBytes;
 		}
 
-		public static int GetNetworkSize(byte[] buffer)
-		{
-			if (buffer == null) throw new ArgumentNullException("buffer");
-
-			return GetNetworkSize(buffer.Length) + buffer.Length;
-		}
-
-		public static int GetNetworkSize(Version version)
+		public static int GetBytesSize(Version version)
 		{
 			if (version == null) throw new ArgumentNullException("version");
 
-			return GetNetworkSize(version.Major) + GetNetworkSize(version.Minor) + GetNetworkSize(version.Build) + GetNetworkSize(version.Revision);
+			return VersionBytes;
 		}
 
-		public static byte[] GetNetworkBytes(string value)
+		public static int GetBytesSize(byte[] buffer)
+		{
+			if (buffer == null) throw new ArgumentNullException("buffer");
+
+			return IntBytes + buffer.Length;
+		}
+
+		public static byte[] GetBytes(string value)
 		{
 			if (value == null) throw new ArgumentNullException("value");
 
 			return Encoding.Unicode.GetBytes(value);
+		}
+
+		/// <summary>
+		/// Same as BitConverter.GetBytes(int), without memory allocation
+		/// </summary>
+		/// <param name="value"></param>
+		/// <param name="buffer"></param>
+		public static void FillBytes(int value, byte[] buffer)
+		{
+			if (buffer == null) throw new ArgumentNullException("buffer");
+			if (buffer.Length < 4) throw new ArgumentOutOfRangeException("buffer");
+
+			buffer[0] = (byte)(value & 0xFF);
+			buffer[1] = (byte)((value >> 8) & 0xFF);
+			buffer[2] = (byte)((value >> 16) & 0xFF);
+			buffer[3] = (byte)((value >> 24) & 0xFF);
 		}
 	}
 }

@@ -9,10 +9,7 @@ namespace iFSA.Service
 		public byte[] Package { get; private set; }
 		public byte[] NetworkBuffer { get; private set; }
 
-		public RequestPackage()
-		{
-
-		}
+		public RequestPackage() { }
 
 		public RequestPackage(RequestHeader requestHeader, byte[] package)
 		{

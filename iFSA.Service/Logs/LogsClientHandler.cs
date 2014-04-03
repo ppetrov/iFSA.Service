@@ -18,7 +18,7 @@ namespace iFSA.Service.Logs
 
 		public async Task<LogConfig[]> GetConfigsAsync()
 		{
-			await this.TransferHandler.WriteMethodAsync(this.Stream, this.Id, (byte)LogMethod.GetConfigs);
+			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)LogMethod.GetConfigs);
 			var data = await this.TransferHandler.ReadDataAsync(this.Stream);
 
 			if (data.Length != TransferHandler.NoData.Length)
@@ -43,8 +43,8 @@ namespace iFSA.Service.Logs
 		{
 			if (logConfig == null) throw new ArgumentNullException("logConfig");
 
-			await this.TransferHandler.WriteMethodAsync(this.Stream, this.Id, (byte)logConfig.LogMethod);
-			await this.TransferHandler.WriteDataAsync(this.Stream, logConfig.NetworkBuffer);
+			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)logConfig.LogMethod);
+			await this.TransferHandler.WriteAsync(this.Stream, logConfig.NetworkBuffer);
 		}
 
 		public async Task<bool> UploadLogsAsync(RequestHeader header, ClientFile[] logs)
@@ -77,8 +77,8 @@ namespace iFSA.Service.Logs
 		{
 			var package = await new PackageHandler(this.TransferHandler.Buffer).PackAsync(files);
 
-			await this.TransferHandler.WriteMethodAsync(this.Stream, this.Id, (byte)method);
-			await this.TransferHandler.WriteDataAsync(this.Stream, new RequestPackage(header, package).NetworkBuffer);
+			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)method);
+			await this.TransferHandler.WriteAsync(this.Stream, new RequestPackage(header, package).NetworkBuffer);
 
 			var data = await this.TransferHandler.ReadDataAsync(this.Stream);
 			return Convert.ToBoolean(BitConverter.ToInt32(data, 0));

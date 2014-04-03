@@ -8,7 +8,7 @@ namespace iFSA.Service
 {
 	public sealed class Server
 	{
-		private bool _isRunning;
+		private volatile bool _isRunning;
 		private readonly TcpListener _listener;
 		private readonly Dictionary<byte, ServerHandlerBase> _handlers = new Dictionary<byte, ServerHandlerBase>();
 
@@ -63,7 +63,8 @@ namespace iFSA.Service
 				{
 					using (var s = client.GetStream())
 					{
-						s.ReadTimeout = (int)TimeSpan.FromSeconds(45).TotalMilliseconds;
+						s.ReadTimeout = (int)TimeSpan.FromSeconds(60).TotalMilliseconds;
+
 						int value;
 						do
 						{

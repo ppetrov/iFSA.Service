@@ -20,8 +20,8 @@ namespace iFSA.Service.Update
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
-			await this.TransferHandler.WriteMethodAsync(stream, this.Id, (byte)UpdateMethod.GetVersion);
-			await this.TransferHandler.WriteDataAsync(stream, BitConverter.GetBytes((int)platform));
+			await this.TransferHandler.WriteAsync(stream, this.Id, (byte)UpdateMethod.GetVersion);
+			await this.TransferHandler.WriteAsync(stream, BitConverter.GetBytes((int)platform));
 			var data = await this.TransferHandler.ReadDataAsync(stream);
 
 			if (data.Length != TransferHandler.NoData.Length)
@@ -36,7 +36,7 @@ namespace iFSA.Service.Update
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
-			await this.TransferHandler.WriteMethodAsync(stream, this.Id, (byte)UpdateMethod.GetVersions);
+			await this.TransferHandler.WriteAsync(stream, this.Id, (byte)UpdateMethod.GetVersions);
 			var data = await this.TransferHandler.ReadDataAsync(stream);
 
 			if (data.Length != TransferHandler.NoData.Length)
@@ -62,8 +62,8 @@ namespace iFSA.Service.Update
 			if (stream == null) throw new ArgumentNullException("stream");
 			if (package == null) throw new ArgumentNullException("package");
 
-			await this.TransferHandler.WriteMethodAsync(stream, this.Id, (byte)UpdateMethod.UploadPackage);
-			await this.TransferHandler.WriteDataAsync(stream, await this.TransferHandler.CompressAsync(package.NetworkBuffer));
+			await this.TransferHandler.WriteAsync(stream, this.Id, (byte)UpdateMethod.UploadPackage);
+			await this.TransferHandler.WriteAsync(stream, await CompressionHelper.CompressAsync(package.NetworkBuffer, this.TransferHandler.Buffer));
 		}
 
 		public async Task<byte[]> DownloadPackageAsync(Stream stream, RequestHeader header)
@@ -71,8 +71,8 @@ namespace iFSA.Service.Update
 			if (stream == null) throw new ArgumentNullException("stream");
 			if (header == null) throw new ArgumentNullException("header");
 
-			await this.TransferHandler.WriteMethodAsync(stream, this.Id, (byte)UpdateMethod.DownloadPackage);
-			await this.TransferHandler.WriteDataAsync(stream, header.NetworkBuffer);
+			await this.TransferHandler.WriteAsync(stream, this.Id, (byte)UpdateMethod.DownloadPackage);
+			await this.TransferHandler.WriteAsync(stream, header.NetworkBuffer);
 			var data = await this.TransferHandler.ReadDataAsync(stream);
 
 			if (data.Length != TransferHandler.NoData.Length)

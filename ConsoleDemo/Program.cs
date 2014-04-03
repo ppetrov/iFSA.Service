@@ -186,11 +186,11 @@ namespace ConsoleDemo
 
 				foreach (var platform in GetConfigs().Select(c => c.Item1).Distinct())
 				{
-					handler.UploadDatabaseAsync(new RequestHeader(platform, @"PPetrov", @"secret"),
+					handler.UploadDatabaseAsync(new RequestHeader(platform, RequestHeader.EmptyVersion, @"PPetrov", @"secret"),
 						new ClientFile(new FileInfo(@"C:\Users\bg900343\Desktop\ifsa.sqlite"))).Wait();
-					handler.UploadFilesAsync(new RequestHeader(platform, @"PPetrov", @"secret"),
+					handler.UploadFilesAsync(new RequestHeader(platform, RequestHeader.EmptyVersion, @"PPetrov", @"secret"),
 						new[] { new ClientFile(new FileInfo(@"C:\temp\Schedule.png")) }).Wait();
-					handler.UploadLogsAsync(new RequestHeader(platform, @"PPetrov", @"secret"),
+					handler.UploadLogsAsync(new RequestHeader(platform, RequestHeader.EmptyVersion, @"PPetrov", @"secret"),
 						new DirectoryInfo(@"C:\temp\Logs").GetFiles(@"*.txt").Select(f => new ClientFile(f)).ToArray()).Wait();
 				}
 			}
@@ -231,7 +231,7 @@ namespace ConsoleDemo
 					var platform = cfg.Item1;
 					var method = cfg.Item2;
 					var folder = Path.Combine(Path.Combine(@"C:\Temp\Server", platform.ToString()), method.ToString().Replace(@"Configure", string.Empty));
-					handler.ConfigureAsync(new LogConfig(new RequestHeader(platform), method, folder)).Wait();
+					handler.ConfigureAsync(new LogConfig(new RequestHeader(platform, RequestHeader.EmptyVersion, "", ""), method, folder)).Wait();
 				}
 			}
 		}

@@ -11,9 +11,7 @@ namespace iFSA.Service
 		private static readonly char[] FileSeparator = { '*' };
 		private static readonly char SizeSeparator = '|';
 
-		private readonly byte[] _headerSize = new byte[4];
 		private readonly byte[] _buffer;
-		private readonly Encoding _encoding = Encoding.Unicode;
 
 		private int _readBytes;
 		private decimal _totalBytes;
@@ -21,6 +19,7 @@ namespace iFSA.Service
 		public PackageHandler(byte[] buffer)
 		{
 			if (buffer == null) throw new ArgumentNullException("buffer");
+			if (buffer.Length == 0) throw new ArgumentOutOfRangeException("buffer");
 
 			_buffer = buffer;
 		}
@@ -57,17 +56,12 @@ namespace iFSA.Service
 			if (input == null) throw new ArgumentNullException("input");
 			if (folder == null) throw new ArgumentNullException("folder");
 
-			await input.ReadAsync(_headerSize, 0, _headerSize.Length);
-
-			var headerBuffer = new byte[BitConverter.ToInt32(_headerSize, 0)];
-			await input.ReadAsync(headerBuffer, 0, headerBuffer.Length);
-
 			var mode = FileMode.Create;
 			if (append)
 			{
 				mode = FileMode.Append;
 			}
-			foreach (var fileHeader in _encoding.GetString(headerBuffer, 0, headerBuffer.Length).Split(FileSeparator))
+			foreach (var fileHeader in NetworkHelper.ReadString(input, _buffer).Split(FileSeparator))
 			{
 				var name = fileHeader.Substring(0, fileHeader.IndexOf(SizeSeparator));
 				var size = int.Parse(fileHeader.Substring(name.Length + 1));
@@ -115,7 +109,7 @@ namespace iFSA.Service
 					header.Append(size);
 				}
 
-				var headerData = _encoding.GetBytes(header.ToString());
+				var headerData = Encoding.Unicode.GetBytes(header.ToString());
 				var headerSize = BitConverter.GetBytes(headerData.Length);
 
 				return Tuple.Create(headerSize, headerData, output.GetBuffer());

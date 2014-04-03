@@ -35,6 +35,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClientFile.cs" />
+    <Compile Include="CompressionHelper.cs" />
     <Compile Include="RequestPackage.cs" />
     <Compile Include="INetworkTransferable.cs" />
     <Compile Include="Logs\LogConfig.cs" />

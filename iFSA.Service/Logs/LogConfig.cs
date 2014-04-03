@@ -42,12 +42,12 @@ namespace iFSA.Service.Logs
 		{
 			var buffer = this.RequestHeader.NetworkBuffer;
 			var updateMethod = (int)this.LogMethod;
-			var folderBuffer = NetworkHelper.GetNetworkBytes(this.Folder);
+			var folderBuffer = NetworkHelper.GetBytes(this.Folder);
 
 			using (var ms = new MemoryStream(
 				NetworkHelper.GetRawSize(buffer) +
-				NetworkHelper.GetNetworkSize(updateMethod) +
-				NetworkHelper.GetNetworkSize(folderBuffer)))
+				NetworkHelper.GetBytesSize(updateMethod) +
+				NetworkHelper.GetBytesSize(folderBuffer)))
 			{
 				NetworkHelper.WriteRaw(ms, buffer);
 				NetworkHelper.Write(ms, updateMethod);

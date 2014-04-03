@@ -15,16 +15,6 @@ namespace iFSA.Service
 
 		public RequestHeader() { }
 
-		public RequestHeader(ClientPlatform clientPlatform)
-			: this(clientPlatform, EmptyVersion, string.Empty, string.Empty)
-		{
-		}
-
-		public RequestHeader(ClientPlatform clientPlatform, string username, string password)
-			: this(clientPlatform, EmptyVersion, username, password)
-		{
-		}
-
 		public RequestHeader(ClientPlatform clientPlatform, Version version, string username, string password)
 		{
 			if (version == null) throw new ArgumentNullException("version");
@@ -59,14 +49,14 @@ namespace iFSA.Service
 		private byte[] GetNetworkBuffer()
 		{
 			var platform = (int)this.ClientPlatform;
-			var userBuffer = NetworkHelper.GetNetworkBytes(this.Username);
-			var passBuffer = NetworkHelper.GetNetworkBytes(this.Password);
+			var userBuffer = NetworkHelper.GetBytes(this.Username);
+			var passBuffer = NetworkHelper.GetBytes(this.Password);
 
 			using (var ms = new MemoryStream(
-				NetworkHelper.GetNetworkSize(platform) +
-				NetworkHelper.GetNetworkSize(this.Version) +
-				NetworkHelper.GetNetworkSize(userBuffer) +
-				NetworkHelper.GetNetworkSize(passBuffer)))
+				NetworkHelper.GetBytesSize(platform) +
+				NetworkHelper.GetBytesSize(this.Version) +
+				NetworkHelper.GetBytesSize(userBuffer) +
+				NetworkHelper.GetBytesSize(passBuffer)))
 			{
 				NetworkHelper.Write(ms, platform);
 				NetworkHelper.Write(ms, this.Version);

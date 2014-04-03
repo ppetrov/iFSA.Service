@@ -17,7 +17,7 @@ namespace iFSA.Service.Update
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
-			var h = new TransferHandler { EnableCompression = false };
+			var h = new TransferHandler(false);
 			switch ((UpdateMethod)methodId)
 			{
 				case UpdateMethod.GetVersion:
@@ -47,7 +47,7 @@ namespace iFSA.Service.Update
 				networkBuffer = package.RequestHeader.NetworkBuffer;
 			}
 
-			await handler.WriteDataAsync(stream, networkBuffer);
+			await handler.WriteAsync(stream, networkBuffer);
 		}
 
 		private async Task GetVersionsAsync(Stream stream, TransferHandler handler)
@@ -71,14 +71,14 @@ namespace iFSA.Service.Update
 				}
 			}
 
-			await handler.WriteDataAsync(stream, networkBuffer);
+			await handler.WriteAsync(stream, networkBuffer);
 		}
 
 		private async Task UploadPackageAsync(Stream stream, TransferHandler handler)
 		{
 			using (var ms = new MemoryStream())
 			{
-				var data = await handler.DecompressAsync(await handler.ReadDataAsync(stream));
+				var data = await CompressionHelper.DecompressAsync(await handler.ReadDataAsync(stream), handler.Buffer);
 				ms.Write(data, 0, data.Length);
 				ms.Position = 0;
 
@@ -98,7 +98,7 @@ namespace iFSA.Service.Update
 				networkBuffer = package.Package;
 			}
 
-			await handler.WriteDataAsync(stream, networkBuffer);
+			await handler.WriteAsync(stream, networkBuffer);
 		}
 	}
 }

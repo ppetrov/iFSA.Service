@@ -20,7 +20,7 @@ namespace iFSA.Service.Logs
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
-			var h = new TransferHandler { EnableCompression = true };
+			var h = new TransferHandler();
 			switch ((LogMethod)methodId)
 			{
 				case LogMethod.GetConfigs:
@@ -57,7 +57,7 @@ namespace iFSA.Service.Logs
 				this.Write(ms, _logFolders, LogMethod.UploadLogs);
 				this.Write(ms, _filesFolders, LogMethod.UploadFiles);
 
-				await handler.WriteDataAsync(stream, ms.ToArray());
+				await handler.WriteAsync(stream, ms.ToArray());
 			}
 		}
 
@@ -79,19 +79,19 @@ namespace iFSA.Service.Logs
 		private async Task UploadLogsAsync(Stream stream, TransferHandler handler)
 		{
 			var success = await Upload(handler, await handler.ReadDataAsync(stream), _logFolders, true);
-			await handler.WriteDataAsync(stream, BitConverter.GetBytes(Convert.ToInt32(success)));
+			await handler.WriteAsync(stream, BitConverter.GetBytes(Convert.ToInt32(success)));
 		}
 
 		private async Task UploadFilesAsync(Stream stream, TransferHandler handler)
 		{
 			var success = await Upload(handler, await handler.ReadDataAsync(stream), _filesFolders, false);
-			await handler.WriteDataAsync(stream, BitConverter.GetBytes(Convert.ToInt32(success)));
+			await handler.WriteAsync(stream, BitConverter.GetBytes(Convert.ToInt32(success)));
 		}
 
 		private async Task UploadDatabaseAsync(Stream stream, TransferHandler handler)
 		{
 			var success = await Upload(handler, await handler.ReadDataAsync(stream), _dbFolders, false);
-			await handler.WriteDataAsync(stream, BitConverter.GetBytes(Convert.ToInt32(success)));
+			await handler.WriteAsync(stream, BitConverter.GetBytes(Convert.ToInt32(success)));
 		}
 
 		private void Configure(byte[] data)
@@ -125,7 +125,7 @@ namespace iFSA.Service.Logs
 		{
 			for (var i = 0; i < folders.Count; i++)
 			{
-				NetworkHelper.WriteRaw(stream, new LogConfig(new RequestHeader((ClientPlatform)i), method, folders[i] ?? string.Empty).NetworkBuffer);
+				NetworkHelper.WriteRaw(stream, new LogConfig(new RequestHeader((ClientPlatform)i, RequestHeader.EmptyVersion, string.Empty, string.Empty), method, folders[i] ?? string.Empty).NetworkBuffer);
 			}
 		}
 
