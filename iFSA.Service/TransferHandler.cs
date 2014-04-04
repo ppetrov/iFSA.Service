@@ -6,7 +6,7 @@ namespace iFSA.Service
 {
 	public sealed class TransferHandler
 	{
-		public static readonly byte[] NoData = { 255, 255, 255, 255 };
+		public static readonly byte[] NoDataBytes = { 255, 255, 255, 255 };
 
 		private readonly byte[] _buffer = new byte[16 * 1024];
 

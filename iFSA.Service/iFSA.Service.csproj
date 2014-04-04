@@ -46,7 +46,7 @@
     <Compile Include="Logs\LogsClientHandler.cs" />
     <Compile Include="RequestHeader.cs" />
     <Compile Include="Logs\LogMethod.cs" />
-    <Compile Include="PackageHandler.cs" />
+    <Compile Include="PackageHelper.cs" />
     <Compile Include="ClientPlatform.cs" />
     <Compile Include="Logs\LogsServerHandler.cs" />
     <Compile Include="ClientHandlerBase.cs" />

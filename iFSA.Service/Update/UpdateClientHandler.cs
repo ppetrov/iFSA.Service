@@ -21,7 +21,7 @@ namespace iFSA.Service.Update
 			this.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
 			this.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
 #endif
-			_compressionHelper = new CompressionHelper(this.TransferHandler.Buffer);
+			_compressionHelper = new CompressionHelper(new byte[80 * 1024]);
 		}
 
 		public async Task<RequestHeader> GetPackageAsync(Stream stream, ClientPlatform platform)
@@ -32,7 +32,7 @@ namespace iFSA.Service.Update
 			await this.TransferHandler.WriteAsync(stream, BitConverter.GetBytes((int)platform));
 			var data = await this.TransferHandler.ReadDataAsync(stream);
 
-			if (data.Length != TransferHandler.NoData.Length)
+			if (data.Length != TransferHandler.NoDataBytes.Length)
 			{
 				return new RequestHeader().Setup(new MemoryStream(data));
 			}
@@ -47,7 +47,7 @@ namespace iFSA.Service.Update
 			await this.TransferHandler.WriteAsync(stream, this.Id, (byte)UpdateMethod.GetVersions);
 			var data = await this.TransferHandler.ReadDataAsync(stream);
 
-			if (data.Length != TransferHandler.NoData.Length)
+			if (data.Length != TransferHandler.NoDataBytes.Length)
 			{
 				var headers = new List<RequestHeader>();
 
@@ -70,10 +70,14 @@ namespace iFSA.Service.Update
 			if (stream == null) throw new ArgumentNullException("stream");
 			if (package == null) throw new ArgumentNullException("package");
 
-			var data = await Task.Run(() => _compressionHelper.Compress(package.NetworkBuffer)).ConfigureAwait(false);
-
+			var data = Utilities.Concat(package.Header.NetworkBuffer, package.Data);
+			var input = data;
+			if (this.TransferHandler.EnableCompression)
+			{
+				input = await Task.Run(() => _compressionHelper.Compress(data)).ConfigureAwait(false);
+			}
 			await this.TransferHandler.WriteAsync(stream, this.Id, (byte)UpdateMethod.UploadPackage);
-			await this.TransferHandler.WriteAsync(stream, data);
+			await this.TransferHandler.WriteAsync(stream, input);
 		}
 
 		public async Task<byte[]> DownloadPackageAsync(Stream stream, RequestHeader header)
@@ -85,7 +89,7 @@ namespace iFSA.Service.Update
 			await this.TransferHandler.WriteAsync(stream, header.NetworkBuffer);
 			var data = await this.TransferHandler.ReadDataAsync(stream);
 
-			if (data.Length != TransferHandler.NoData.Length)
+			if (data.Length != TransferHandler.NoDataBytes.Length)
 			{
 				return data;
 			}

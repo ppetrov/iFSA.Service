@@ -7,6 +7,13 @@ namespace iFSA.Service.Logs
 {
 	public sealed class LogsClientHandler : ClientHandlerBase
 	{
+		private readonly PackageHelper _packageHelper;
+
+		public PackageHelper PackageHelper
+		{
+			get { return _packageHelper; }
+		}
+
 		public LogsClientHandler(byte id, string hostname, int port)
 			: base(id, hostname, port)
 		{
@@ -14,6 +21,7 @@ namespace iFSA.Service.Logs
 			this.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
 			this.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
 #endif
+			_packageHelper = new PackageHelper(new byte[80 * 1024]);
 		}
 
 		public async Task<LogConfig[]> GetConfigsAsync()
@@ -21,7 +29,7 @@ namespace iFSA.Service.Logs
 			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)LogMethod.GetConfigs);
 			var data = await this.TransferHandler.ReadDataAsync(this.Stream);
 
-			if (data.Length != TransferHandler.NoData.Length)
+			if (data.Length != TransferHandler.NoDataBytes.Length)
 			{
 				var configs = new List<LogConfig>();
 
@@ -75,10 +83,10 @@ namespace iFSA.Service.Logs
 
 		private async Task<bool> Upload(RequestHeader header, ClientFile[] files, LogMethod method)
 		{
-			var package = await new PackageHandler(this.TransferHandler.Buffer).PackAsync(files);
+			var package = await _packageHelper.PackAsync(files);
 
 			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)method);
-			await this.TransferHandler.WriteAsync(this.Stream, new RequestPackage(header, package).NetworkBuffer);
+			await this.TransferHandler.WriteAsync(this.Stream, Utilities.Concat(header.NetworkBuffer, package));
 
 			var data = await this.TransferHandler.ReadDataAsync(this.Stream);
 			return Convert.ToBoolean(BitConverter.ToInt32(data, 0));

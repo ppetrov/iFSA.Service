@@ -39,12 +39,12 @@ namespace iFSA.Service.Update
 
 		private async Task GetVersionAsync(Stream stream, TransferHandler handler)
 		{
-			var networkBuffer = TransferHandler.NoData;
+			var networkBuffer = TransferHandler.NoDataBytes;
 
 			var package = _packages[BitConverter.ToInt32(await handler.ReadDataAsync(stream), 0)];
 			if (package != null)
 			{
-				networkBuffer = package.RequestHeader.NetworkBuffer;
+				networkBuffer = package.Header.NetworkBuffer;
 			}
 
 			await handler.WriteAsync(stream, networkBuffer);
@@ -52,7 +52,7 @@ namespace iFSA.Service.Update
 
 		private async Task GetVersionsAsync(Stream stream, TransferHandler handler)
 		{
-			var networkBuffer = TransferHandler.NoData;
+			var networkBuffer = TransferHandler.NoDataBytes;
 
 			using (var ms = new MemoryStream())
 			{
@@ -60,7 +60,7 @@ namespace iFSA.Service.Update
 				{
 					if (v != null)
 					{
-						var buffer = v.RequestHeader.NetworkBuffer;
+						var buffer = v.Header.NetworkBuffer;
 						ms.Capacity += buffer.Length;
 						ms.Write(buffer, 0, buffer.Length);
 					}
@@ -76,27 +76,31 @@ namespace iFSA.Service.Update
 
 		private async Task UploadPackageAsync(Stream stream, TransferHandler handler)
 		{
-			using (var ms = new MemoryStream())
-			{
-				var input = await handler.ReadDataAsync(stream);
-				var data = await Task.Run(() => new CompressionHelper(handler.Buffer).Decompress(input)).ConfigureAwait(false);
-				ms.Write(data, 0, data.Length);
-				ms.Position = 0;
+			var input = await handler.ReadDataAsync(stream);
+			var data = await Task.Run(() => new CompressionHelper(handler.Buffer).Decompress(input)).ConfigureAwait(false);
 
-				var package = new RequestPackage().Setup(ms);
-				_packages[(int)package.RequestHeader.ClientPlatform] = package;
+			RequestHeader header;
+			byte[] packageBytes;
+			using (var ms = new MemoryStream(data))
+			{
+				header = new RequestHeader().Setup(ms);
+				packageBytes = new byte[stream.Length - stream.Position];
+				Array.Copy(data, stream.Position, packageBytes, 0, packageBytes.Length);
 			}
+
+			var package = new RequestPackage(header, packageBytes);
+			_packages[(int)package.Header.ClientPlatform] = package;
 		}
 
 		private async Task DownloadPackageAsync(Stream stream, TransferHandler handler)
 		{
-			var networkBuffer = TransferHandler.NoData;
+			var networkBuffer = TransferHandler.NoDataBytes;
 
 			var header = new RequestHeader().Setup(new MemoryStream(await handler.ReadDataAsync(stream)));
 			var package = _packages[(int)header.ClientPlatform];
-			if (package != null && package.RequestHeader.Version > header.Version)
+			if (package != null && package.Header.Version > header.Version)
 			{
-				networkBuffer = package.Package;
+				networkBuffer = package.Data;
 			}
 
 			await handler.WriteAsync(stream, networkBuffer);

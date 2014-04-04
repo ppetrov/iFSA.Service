@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace iFSA.Service
 {
-	public sealed class PackageHandler
+	public sealed class PackageHelper
 	{
 		private static readonly char[] FileSeparator = { '*' };
 		private static readonly char SizeSeparator = '|';
@@ -15,7 +15,7 @@ namespace iFSA.Service
 		private int _readBytes;
 		private decimal _totalBytes;
 
-		public PackageHandler(byte[] buffer)
+		public PackageHelper(byte[] buffer)
 		{
 			if (buffer == null) throw new ArgumentNullException("buffer");
 			if (buffer.Length == 0) throw new ArgumentOutOfRangeException("buffer");

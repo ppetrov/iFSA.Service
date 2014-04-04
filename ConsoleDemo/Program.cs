@@ -80,14 +80,14 @@ namespace ConsoleDemo
 			//Console.WriteLine(@"Upload version for " + platform);
 			//using (var c = new TcpClient(hostname, port))
 			//{
-			//	h.UploadPackageAsync(c, new RequestPackage(new RequestHeader(platform, new Version(2, 2, 2, 2), "", ""), GetPackage())).Wait();
+			//	h.UploadPackageAsync(c, new RequestPackage(new Header(platform, new Version(2, 2, 2, 2), "", ""), GetPackage())).Wait();
 			//}
 
 			//Thread.Sleep(1000);
 			//Console.WriteLine(@"Upload version for " + platform);
 			//using (var c = new TcpClient(hostname, port))
 			//{
-			//	h.UploadPackageAsync(c, new RequestPackage(new RequestHeader(ClientPlatform.WinMobile, new Version(3, 3, 3, 3), "", ""), GetPackage())).Wait();
+			//	h.UploadPackageAsync(c, new RequestPackage(new Header(ClientPlatform.WinMobile, new Version(3, 3, 3, 3), "", ""), GetPackage())).Wait();
 			//}
 
 
@@ -120,7 +120,7 @@ namespace ConsoleDemo
 			//Console.WriteLine(@"Download version for " + platform + " latest");
 			//using (var c = new TcpClient(hostname, port))
 			//{
-			//	var package = h.DownloadPackageAsync(c, new RequestHeader(platform, new Version(3, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03")).Result;
+			//	var package = h.DownloadPackageAsync(c, new Header(platform, new Version(3, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03")).Result;
 			//	if (package != null)
 			//	{
 			//		Console.WriteLine("Client" + package.Length);
@@ -135,7 +135,7 @@ namespace ConsoleDemo
 			//Console.WriteLine(@"Download version for " + platform + " old");
 			//using (var c = new TcpClient(hostname, port))
 			//{
-			//	var package = h.DownloadPackageAsync(c, new RequestHeader(platform, new Version(2, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03")).Result;
+			//	var package = h.DownloadPackageAsync(c, new Header(platform, new Version(2, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03")).Result;
 			//	Console.WriteLine("Client" + package.Length);
 			//}
 
@@ -152,7 +152,7 @@ namespace ConsoleDemo
 			//										 try
 			//										 {
 			//											 var th = new UpdateClientHandler(1);
-			//											 var v = new RequestHeader(ClientPlatform.WinRT, new Version(1, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03");
+			//											 var v = new Header(ClientPlatform.WinRT, new Version(1, 0, 12, 2317), @"ppetrov", @"sc1f1r3hack03");
 			//											 for (int j = 0; j < 23; j++)
 			//											 {
 			//												 using (var c = new TcpClient(hostname, port))
@@ -183,6 +183,9 @@ namespace ConsoleDemo
 			{
 				handler.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
 				handler.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
+
+				//handler.PackageHelper.FileProgress += (sender, _) => Console.WriteLine(@"Packing file ..." + _);
+				//handler.PackageHelper.PercentProgress += (sender, _) => Console.WriteLine(@"Pack progress " + _.ToString(@"F2") + "%");
 
 				foreach (var platform in GetConfigs().Select(c => c.Item1).Distinct())
 				{

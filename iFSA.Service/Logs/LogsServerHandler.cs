@@ -147,7 +147,7 @@ namespace iFSA.Service.Logs
 					{
 						userFolder.Create();
 					}
-					await new PackageHandler(handler.Buffer).UnpackAsync(ms, userFolder, append);
+					await new PackageHelper(handler.Buffer).UnpackAsync(ms, userFolder, append);
 					success = true;
 				}
 			}
