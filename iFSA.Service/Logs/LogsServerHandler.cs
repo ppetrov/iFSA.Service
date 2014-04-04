@@ -81,19 +81,19 @@ namespace iFSA.Service.Logs
 
 		private async Task UploadLogsAsync(Stream stream, TransferHandler handler)
 		{
-			var success = await Upload(handler, await handler.ReadDataAsync(stream), _logFolders, true);
+			var success = await Upload(await handler.ReadDataAsync(stream), _logFolders, true);
 			await handler.WriteAsync(stream, success);
 		}
 
 		private async Task UploadFilesAsync(Stream stream, TransferHandler handler)
 		{
-			var success = await Upload(handler, await handler.ReadDataAsync(stream), _filesFolders, false);
+			var success = await Upload(await handler.ReadDataAsync(stream), _filesFolders, false);
 			await handler.WriteAsync(stream, success);
 		}
 
 		private async Task UploadDatabaseAsync(Stream stream, TransferHandler handler)
 		{
-			var success = await Upload(handler, await handler.ReadDataAsync(stream), _dbFolders, false);
+			var success = await Upload(await handler.ReadDataAsync(stream), _dbFolders, false);
 			await handler.WriteAsync(stream, success);
 		}
 
@@ -132,7 +132,7 @@ namespace iFSA.Service.Logs
 			}
 		}
 
-		private static async Task<byte[]> Upload(TransferHandler handler, byte[] data, string[] folders, bool append)
+		private async Task<byte[]> Upload(byte[] data, string[] folders, bool append)
 		{
 			var success = false;
 
@@ -147,7 +147,7 @@ namespace iFSA.Service.Logs
 					{
 						userFolder.Create();
 					}
-					await new PackageHelper(handler.Buffer).UnpackAsync(ms, userFolder, append);
+					await new PackageHelper().UnpackAsync(ms, userFolder, append);
 					success = true;
 				}
 			}

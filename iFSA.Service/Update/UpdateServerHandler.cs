@@ -77,19 +77,16 @@ namespace iFSA.Service.Update
 		private async Task UploadPackageAsync(Stream stream, TransferHandler handler)
 		{
 			var input = await handler.ReadDataAsync(stream);
-			var data = await Task.Run(() => new CompressionHelper(handler.Buffer).Decompress(input)).ConfigureAwait(false);
 
-			RequestHeader header;
-			byte[] packageBytes;
-			using (var ms = new MemoryStream(data))
+			using (var ms = new MemoryStream(input))
 			{
-				header = new RequestHeader().Setup(ms);
-				packageBytes = new byte[stream.Length - stream.Position];
-				Array.Copy(data, stream.Position, packageBytes, 0, packageBytes.Length);
-			}
+				var header = new RequestHeader().Setup(ms);
+				var packageBytes = new byte[stream.Length - stream.Position];
+				ms.Read(packageBytes, 0, packageBytes.Length);
 
-			var package = new RequestPackage(header, packageBytes);
-			_packages[(int)package.Header.ClientPlatform] = package;
+				var package = new RequestPackage(header, packageBytes);
+				_packages[(int)package.Header.ClientPlatform] = package;
+			}
 		}
 
 		private async Task DownloadPackageAsync(Stream stream, TransferHandler handler)

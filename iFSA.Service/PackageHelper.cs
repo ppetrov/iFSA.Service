@@ -10,18 +10,7 @@ namespace iFSA.Service
 		private static readonly char[] FileSeparator = { '*' };
 		private static readonly char SizeSeparator = '|';
 
-		private readonly byte[] _buffer;
-
-		private int _readBytes;
-		private decimal _totalBytes;
-
-		public PackageHelper(byte[] buffer)
-		{
-			if (buffer == null) throw new ArgumentNullException("buffer");
-			if (buffer.Length == 0) throw new ArgumentOutOfRangeException("buffer");
-
-			_buffer = buffer;
-		}
+		private readonly byte[] _buffer = new byte[80 * 1024];
 
 		public event EventHandler<string> FileProgress;
 		private void OnFileProgress(string e)
@@ -30,8 +19,8 @@ namespace iFSA.Service
 			if (handler != null) handler(this, e);
 		}
 
-		public event EventHandler<double> PercentProgress;
-		private void OnPercentProgress(double e)
+		public event EventHandler<decimal> PercentProgress;
+		private void OnPercentProgress(decimal e)
 		{
 			var handler = PercentProgress;
 			if (handler != null) handler(this, e);
@@ -69,20 +58,8 @@ namespace iFSA.Service
 
 				var headerData = Encoding.Unicode.GetBytes(header.ToString());
 				var headerSize = BitConverter.GetBytes(headerData.Length);
-				var data = output.GetBuffer();
 
-				using (var package = new MemoryStream(headerSize.Length + headerData.Length + data.Length))
-				{
-					await package.WriteAsync(headerSize, 0, headerSize.Length);
-					await package.WriteAsync(headerData, 0, headerData.Length);
-
-					using (var input = new MemoryStream(data))
-					{
-						await this.CopyAsync(input, package, data.Length);
-					}
-
-					return package.GetBuffer();
-				}
+				return Utilities.Concat(headerSize, headerData, output.GetBuffer());
 			}
 		}
 
@@ -125,14 +102,7 @@ namespace iFSA.Service
 			{
 				using (var input = file.OpenRead())
 				{
-					this.InitPercentProgress(buffer.Length);
-
-					int readBytes;
-					while ((readBytes = await input.ReadAsync(_buffer, 0, _buffer.Length)) != 0)
-					{
-						await output.WriteAsync(_buffer, 0, readBytes);
-						this.ReportPercentProgress(readBytes);
-					}
+					await CopyAsync(input, output, size);
 				}
 			}
 
@@ -141,40 +111,17 @@ namespace iFSA.Service
 
 		private async Task CopyAsync(Stream input, Stream output, int size)
 		{
-			this.InitPercentProgress(size);
+			this.OnPercentProgress(0);
 
-			var bufferSize = _buffer.Length;
-			for (var i = 0; i < size / bufferSize; i++)
+			int readBytes;
+			var totalReadBytes = 0;
+			while ((readBytes = await input.ReadAsync(_buffer, 0, _buffer.Length)) != 0)
 			{
-				await CopyDataAsync(input, output, bufferSize);
+				await output.WriteAsync(_buffer, 0, readBytes);
+
+				totalReadBytes += readBytes;
+				this.OnPercentProgress(Utilities.GetProgressPercent(size, totalReadBytes));
 			}
-			bufferSize = (size % bufferSize);
-			if (bufferSize != 0)
-			{
-				await CopyDataAsync(input, output, bufferSize);
-			}
-		}
-
-		private async Task CopyDataAsync(Stream input, Stream output, int bufferSize)
-		{
-			await input.ReadAsync(_buffer, 0, bufferSize);
-			await output.WriteAsync(_buffer, 0, bufferSize);
-
-			this.ReportPercentProgress(bufferSize);
-		}
-
-		private void InitPercentProgress(int bytes)
-		{
-			_readBytes = 0;
-			_totalBytes = bytes / 100.0M;
-
-			this.ReportPercentProgress(0);
-		}
-
-		private void ReportPercentProgress(int readBytes)
-		{
-			_readBytes += readBytes;
-			this.OnPercentProgress(Convert.ToDouble(_readBytes / _totalBytes));
 		}
 	}
 }

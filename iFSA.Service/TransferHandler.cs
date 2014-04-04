@@ -12,8 +12,6 @@ namespace iFSA.Service
 
 		public bool EnableCompression { get; private set; }
 
-		public byte[] Buffer { get { return _buffer; } }
-
 		public event EventHandler<decimal> WriteProgress;
 		private void OnWriteProgress(decimal e)
 		{

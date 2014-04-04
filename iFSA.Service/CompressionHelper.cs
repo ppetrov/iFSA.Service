@@ -8,10 +8,10 @@ namespace iFSA.Service
 	{
 		private readonly byte[] _buffer;
 
-		public event EventHandler<decimal> Progress;
-		private void OnProgress(decimal e)
+		public event EventHandler<decimal> PercentProgress;
+		private void OnPercentProgress(decimal e)
 		{
-			var handler = Progress;
+			var handler = PercentProgress;
 			if (handler != null) handler(this, e);
 		}
 
@@ -61,7 +61,7 @@ namespace iFSA.Service
 
 		private void Process(Stream input, Stream output, int totalBytes)
 		{
-			this.OnProgress(0);
+			this.OnPercentProgress(0);
 
 			int readBytes;
 			int totalReadBytes = 0;
@@ -70,7 +70,7 @@ namespace iFSA.Service
 				output.Write(_buffer, 0, readBytes);
 
 				totalReadBytes += readBytes;
-				this.OnProgress(Utilities.GetProgressPercent(totalBytes, totalReadBytes));
+				this.OnPercentProgress(Utilities.GetProgressPercent(totalBytes, totalReadBytes));
 			}
 		}
 	}

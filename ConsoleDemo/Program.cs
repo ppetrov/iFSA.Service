@@ -181,8 +181,8 @@ namespace ConsoleDemo
 			Console.WriteLine(@"Upload data");
 			using (var handler = new LogsClientHandler(2, hostname, port))
 			{
-				handler.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
-				handler.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
+				//handler.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
+				//handler.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
 
 				//handler.PackageHelper.FileProgress += (sender, _) => Console.WriteLine(@"Packing file ..." + _);
 				//handler.PackageHelper.PercentProgress += (sender, _) => Console.WriteLine(@"Pack progress " + _.ToString(@"F2") + "%");
@@ -204,8 +204,8 @@ namespace ConsoleDemo
 			Console.WriteLine(@"Get log configs");
 			using (var handler = new LogsClientHandler(2, hostname, port))
 			{
-				handler.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
-				handler.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
+				//handler.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
+				//handler.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
 
 				var configs = handler.GetConfigsAsync().Result;
 				foreach (var cfg in configs)
@@ -226,8 +226,8 @@ namespace ConsoleDemo
 
 			using (var handler = new LogsClientHandler(2, hostname, port))
 			{
-				handler.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
-				handler.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
+				//handler.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
+				//handler.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
 
 				foreach (var cfg in GetConfigs())
 				{

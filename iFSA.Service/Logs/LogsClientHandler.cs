@@ -7,7 +7,7 @@ namespace iFSA.Service.Logs
 {
 	public sealed class LogsClientHandler : ClientHandlerBase
 	{
-		private readonly PackageHelper _packageHelper;
+		private readonly PackageHelper _packageHelper = new PackageHelper();
 
 		public PackageHelper PackageHelper
 		{
@@ -21,7 +21,6 @@ namespace iFSA.Service.Logs
 			this.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
 			this.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
 #endif
-			_packageHelper = new PackageHelper(new byte[80 * 1024]);
 		}
 
 		public async Task<LogConfig[]> GetConfigsAsync()
