@@ -78,7 +78,8 @@ namespace iFSA.Service.Update
 		{
 			using (var ms = new MemoryStream())
 			{
-				var data = await CompressionHelper.DecompressAsync(await handler.ReadDataAsync(stream), handler.Buffer);
+				var input = await handler.ReadDataAsync(stream);
+				var data = await Task.Run(() => new CompressionHelper(handler.Buffer).Decompress(input)).ConfigureAwait(false);
 				ms.Write(data, 0, data.Length);
 				ms.Position = 0;
 

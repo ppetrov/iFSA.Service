@@ -55,6 +55,7 @@
     <Compile Include="Server.cs" />
     <Compile Include="ServerHandlerBase.cs" />
     <Compile Include="TransferHandler.cs" />
+    <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

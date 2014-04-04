@@ -7,6 +7,13 @@ namespace iFSA.Service.Update
 {
 	public sealed class UpdateClientHandler : ClientHandlerBase
 	{
+		private readonly CompressionHelper _compressionHelper;
+
+		public CompressionHelper CompressionHelper
+		{
+			get { return _compressionHelper; }
+		}
+
 		public UpdateClientHandler(byte id, string hostname, int port)
 			: base(id, hostname, port)
 		{
@@ -14,6 +21,7 @@ namespace iFSA.Service.Update
 			this.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
 			this.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
 #endif
+			_compressionHelper = new CompressionHelper(this.TransferHandler.Buffer);
 		}
 
 		public async Task<RequestHeader> GetPackageAsync(Stream stream, ClientPlatform platform)
@@ -62,8 +70,10 @@ namespace iFSA.Service.Update
 			if (stream == null) throw new ArgumentNullException("stream");
 			if (package == null) throw new ArgumentNullException("package");
 
+			var data = await Task.Run(() => _compressionHelper.Compress(package.NetworkBuffer)).ConfigureAwait(false);
+
 			await this.TransferHandler.WriteAsync(stream, this.Id, (byte)UpdateMethod.UploadPackage);
-			await this.TransferHandler.WriteAsync(stream, await CompressionHelper.CompressAsync(package.NetworkBuffer, this.TransferHandler.Buffer));
+			await this.TransferHandler.WriteAsync(stream, data);
 		}
 
 		public async Task<byte[]> DownloadPackageAsync(Stream stream, RequestHeader header)

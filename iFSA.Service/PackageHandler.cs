@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -43,11 +42,47 @@ namespace iFSA.Service
 			if (files == null) throw new ArgumentNullException("files");
 			if (files.Length == 0) throw new ArgumentOutOfRangeException("files");
 
-			var package = await ReadFolderAsync(files);
-			using (var output = new MemoryStream(package.Item1.Length + package.Item2.Length + package.Item3.Length))
+			using (var output = new MemoryStream())
 			{
-				await PackAsync(output, package.Item1, package.Item2, package.Item3);
-				return output.GetBuffer();
+				var header = new StringBuilder();
+
+				foreach (var f in files)
+				{
+					var file = f.File;
+					var name = Path.GetFileName(file.FullName);
+					this.OnFileProgress(name);
+
+					var size = Convert.ToInt32(file.Length);
+					output.Capacity += size;
+
+					var fileBytes = await this.ReadFileAsync(file, size);
+					await output.WriteAsync(fileBytes, 0, fileBytes.Length);
+
+					if (header.Length > 0)
+					{
+						header.Append(FileSeparator);
+					}
+					header.Append(name);
+					header.Append(SizeSeparator);
+					header.Append(size);
+				}
+
+				var headerData = Encoding.Unicode.GetBytes(header.ToString());
+				var headerSize = BitConverter.GetBytes(headerData.Length);
+				var data = output.GetBuffer();
+
+				using (var package = new MemoryStream(headerSize.Length + headerData.Length + data.Length))
+				{
+					await package.WriteAsync(headerSize, 0, headerSize.Length);
+					await package.WriteAsync(headerData, 0, headerData.Length);
+
+					using (var input = new MemoryStream(data))
+					{
+						await this.CopyAsync(input, package, data.Length);
+					}
+
+					return package.GetBuffer();
+				}
 			}
 		}
 
@@ -79,51 +114,6 @@ namespace iFSA.Service
 				{
 					await CopyAsync(input, output, size);
 				}
-			}
-		}
-
-		private async Task<Tuple<byte[], byte[], byte[]>> ReadFolderAsync(IEnumerable<ClientFile> clientFiles)
-		{
-			using (var output = new MemoryStream())
-			{
-				var header = new StringBuilder();
-
-				foreach (var f in clientFiles)
-				{
-					var file = f.File;
-					var name = Path.GetFileName(file.FullName);
-					this.OnFileProgress(name);
-
-					var size = Convert.ToInt32(file.Length);
-					output.Capacity += size;
-
-					var data = await this.ReadFileAsync(file, size);
-					await output.WriteAsync(data, 0, data.Length);
-
-					if (header.Length > 0)
-					{
-						header.Append(FileSeparator);
-					}
-					header.Append(name);
-					header.Append(SizeSeparator);
-					header.Append(size);
-				}
-
-				var headerData = Encoding.Unicode.GetBytes(header.ToString());
-				var headerSize = BitConverter.GetBytes(headerData.Length);
-
-				return Tuple.Create(headerSize, headerData, output.GetBuffer());
-			}
-		}
-
-		private async Task PackAsync(Stream output, byte[] headerSize, byte[] headerData, byte[] data)
-		{
-			await output.WriteAsync(headerSize, 0, headerSize.Length);
-			await output.WriteAsync(headerData, 0, headerData.Length);
-
-			using (var input = new MemoryStream(data))
-			{
-				await this.CopyAsync(input, output, data.Length);
 			}
 		}
 

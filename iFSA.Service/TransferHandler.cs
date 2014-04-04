@@ -6,7 +6,7 @@ namespace iFSA.Service
 {
 	public sealed class TransferHandler
 	{
-		public static readonly byte[] NoData = BitConverter.GetBytes(-1);
+		public static readonly byte[] NoData = { 255, 255, 255, 255 };
 
 		private readonly byte[] _buffer = new byte[16 * 1024];
 
@@ -58,7 +58,7 @@ namespace iFSA.Service
 			var data = input;
 			if (this.EnableCompression)
 			{
-				data = await CompressionHelper.CompressAsync(data, _buffer);
+				data = await Task.Run(() => new CompressionHelper(_buffer).Compress(input)).ConfigureAwait(false);
 			}
 
 			// Write size
@@ -72,9 +72,8 @@ namespace iFSA.Service
 			for (var i = 0; i < chunks; i += bufferLength)
 			{
 				await stream.WriteAsync(data, i, bufferLength);
-				this.OnWriteProgress(this.GetProgressPercent(totalBytes, i + bufferLength));
+				this.OnWriteProgress(Utilities.GetProgressPercent(totalBytes, i + bufferLength));
 			}
-
 			var remaining = totalBytes % bufferLength;
 			if (remaining != 0)
 			{
@@ -110,7 +109,7 @@ namespace iFSA.Service
 				{
 					await this.ReadDataAsync(stream, _buffer, bufferLength);
 					await output.WriteAsync(_buffer, 0, bufferLength);
-					this.OnReadProgress(this.GetProgressPercent(dataSize, i + bufferLength));
+					this.OnReadProgress(Utilities.GetProgressPercent(dataSize, i + bufferLength));
 				}
 				var remaining = dataSize % bufferLength;
 				if (remaining != 0)
@@ -122,7 +121,7 @@ namespace iFSA.Service
 				var input = output.GetBuffer();
 				if (this.EnableCompression)
 				{
-					return await CompressionHelper.DecompressAsync(input, _buffer);
+					return await Task.Run(() => new CompressionHelper(_buffer).Decompress(input)).ConfigureAwait(false);
 				}
 				return input;
 			}
@@ -142,11 +141,6 @@ namespace iFSA.Service
 				}
 				offset += readBytes;
 			}
-		}
-
-		private decimal GetProgressPercent(int totalBytes, int readBytes)
-		{
-			return (readBytes * 100.0M) / totalBytes;
 		}
 	}
 }

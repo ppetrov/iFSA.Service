@@ -7,6 +7,9 @@ namespace iFSA.Service.Logs
 {
 	public sealed class LogsServerHandler : ServerHandlerBase
 	{
+		private static readonly byte[] ZeroBytes = { 0, 0, 0, 0 };
+		private static readonly byte[] OneBytes = { 1, 0, 0, 0 };
+
 		private readonly string[] _dbFolders = new string[3];
 		private readonly string[] _logFolders = new string[3];
 		private readonly string[] _filesFolders = new string[3];
@@ -79,19 +82,19 @@ namespace iFSA.Service.Logs
 		private async Task UploadLogsAsync(Stream stream, TransferHandler handler)
 		{
 			var success = await Upload(handler, await handler.ReadDataAsync(stream), _logFolders, true);
-			await handler.WriteAsync(stream, BitConverter.GetBytes(Convert.ToInt32(success)));
+			await handler.WriteAsync(stream, success);
 		}
 
 		private async Task UploadFilesAsync(Stream stream, TransferHandler handler)
 		{
 			var success = await Upload(handler, await handler.ReadDataAsync(stream), _filesFolders, false);
-			await handler.WriteAsync(stream, BitConverter.GetBytes(Convert.ToInt32(success)));
+			await handler.WriteAsync(stream, success);
 		}
 
 		private async Task UploadDatabaseAsync(Stream stream, TransferHandler handler)
 		{
 			var success = await Upload(handler, await handler.ReadDataAsync(stream), _dbFolders, false);
-			await handler.WriteAsync(stream, BitConverter.GetBytes(Convert.ToInt32(success)));
+			await handler.WriteAsync(stream, success);
 		}
 
 		private void Configure(byte[] data)
@@ -129,8 +132,10 @@ namespace iFSA.Service.Logs
 			}
 		}
 
-		private static async Task<bool> Upload(TransferHandler handler, byte[] data, string[] folders, bool append)
+		private static async Task<byte[]> Upload(TransferHandler handler, byte[] data, string[] folders, bool append)
 		{
+			var success = false;
+
 			using (var ms = new MemoryStream(data))
 			{
 				var header = new RequestHeader().Setup(ms);
@@ -143,11 +148,11 @@ namespace iFSA.Service.Logs
 						userFolder.Create();
 					}
 					await new PackageHandler(handler.Buffer).UnpackAsync(ms, userFolder, append);
-					return true;
+					success = true;
 				}
 			}
 
-			return false;
+			return success ? OneBytes : ZeroBytes;
 		}
 	}
 }

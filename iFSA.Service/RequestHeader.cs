@@ -32,7 +32,7 @@ namespace iFSA.Service
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
-			var buffer = BitConverter.GetBytes(0);
+			var buffer = new byte[NetworkHelper.IntBytes];
 			this.ClientPlatform = (ClientPlatform)NetworkHelper.ReadInt32(stream, buffer);
 			var major = NetworkHelper.ReadInt32(stream, buffer);
 			var minor = NetworkHelper.ReadInt32(stream, buffer);

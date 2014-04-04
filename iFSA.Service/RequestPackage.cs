@@ -18,15 +18,7 @@ namespace iFSA.Service
 
 			this.RequestHeader = requestHeader;
 			this.Package = package;
-
-			var headerBuffer = requestHeader.NetworkBuffer;
-			using (var ms = new MemoryStream(headerBuffer.Length + package.Length))
-			{
-				ms.Write(headerBuffer, 0, headerBuffer.Length);
-				ms.Write(package, 0, package.Length);
-
-				this.NetworkBuffer = ms.GetBuffer();
-			}
+			this.NetworkBuffer = Utilities.Concat(requestHeader.NetworkBuffer, package);
 		}
 
 		public RequestPackage Setup(MemoryStream stream)
