@@ -10,9 +10,7 @@ namespace iFSA.Service.Logs
 		public string Folder { get; private set; }
 		public byte[] NetworkBuffer { get; private set; }
 
-		public LogConfig()
-		{
-		}
+		public LogConfig() { }
 
 		public LogConfig(RequestHeader requestHeader, LogMethod logMethod, string folder)
 		{
@@ -22,7 +20,7 @@ namespace iFSA.Service.Logs
 			this.RequestHeader = requestHeader;
 			this.LogMethod = logMethod;
 			this.Folder = folder;
-			this.NetworkBuffer = GetNetworkBuffer();
+			this.NetworkBuffer = this.GetNetworkBuffer();
 		}
 
 		public LogConfig Setup(MemoryStream stream)
