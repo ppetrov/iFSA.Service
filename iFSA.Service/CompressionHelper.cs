@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.IO.Compression;
+using System.Threading.Tasks;
 
 namespace iFSA.Service
 {
@@ -28,17 +29,15 @@ namespace iFSA.Service
 			if (data == null) throw new ArgumentNullException("data");
 			if (data.Length == 0) throw new ArgumentOutOfRangeException("data");
 
-			using (var input = new MemoryStream(data))
-			{
-				using (var output = new MemoryStream())
-				{
-					using (var zipStream = new GZipStream(output, CompressionMode.Compress))
-					{
-						this.Process(input, zipStream, data.Length);
-					}
-					return output.ToArray();
-				}
-			}
+			return Process(data, CompressionMode.Compress);
+		}
+
+		public Task<byte[]> CompressAsync(byte[] data)
+		{
+			if (data == null) throw new ArgumentNullException("data");
+			if (data.Length == 0) throw new ArgumentOutOfRangeException("data");
+
+			return ProcessAsync(data, CompressionMode.Compress);
 		}
 
 		public byte[] Decompress(byte[] data)
@@ -46,31 +45,107 @@ namespace iFSA.Service
 			if (data == null) throw new ArgumentNullException("data");
 			if (data.Length == 0) throw new ArgumentOutOfRangeException("data");
 
-			using (var input = new MemoryStream(data))
+			return Process(data, CompressionMode.Decompress);
+		}
+
+		public Task<byte[]> DecompressAsync(byte[] data)
+		{
+			if (data == null) throw new ArgumentNullException("data");
+			if (data.Length == 0) throw new ArgumentOutOfRangeException("data");
+
+			return ProcessAsync(data, CompressionMode.Decompress);
+		}
+
+		private byte[] Process(byte[] data, CompressionMode mode)
+		{
+			using (var inStream = new MemoryStream(data))
 			{
-				using (var output = new MemoryStream())
+				using (var outStream = new MemoryStream())
 				{
-					using (var zipStream = new GZipStream(input, CompressionMode.Decompress))
+					Stream zipInput;
+					switch (mode)
 					{
-						this.Process(zipStream, output, data.Length);
+						case CompressionMode.Decompress:
+							zipInput = inStream;
+							break;
+						case CompressionMode.Compress:
+							zipInput = outStream;
+							break;
+						default:
+							throw new ArgumentOutOfRangeException("mode");
 					}
-					return output.ToArray();
+					using (var zipStream = new GZipStream(zipInput, mode))
+					{
+						Stream input = inStream;
+						Stream output = zipStream;
+						if (mode == CompressionMode.Decompress)
+						{
+							input = zipStream;
+							output = outStream;
+						}
+
+						var totalBytes = data.Length;
+						this.OnPercentProgress(0);
+
+						int readBytes;
+						int totalReadBytes = 0;
+						while ((readBytes = input.Read(_buffer, 0, _buffer.Length)) != 0)
+						{
+							output.Write(_buffer, 0, readBytes);
+
+							totalReadBytes += readBytes;
+							this.OnPercentProgress(Utilities.GetProgressPercent(totalBytes, totalReadBytes));
+						}
+
+					}
+					return outStream.ToArray();
 				}
 			}
 		}
 
-		private void Process(Stream input, Stream output, int totalBytes)
+		private async Task<byte[]> ProcessAsync(byte[] data, CompressionMode mode)
 		{
-			this.OnPercentProgress(0);
-
-			int readBytes;
-			int totalReadBytes = 0;
-			while ((readBytes = input.Read(_buffer, 0, _buffer.Length)) != 0)
+			using (var inStream = new MemoryStream(data))
 			{
-				output.Write(_buffer, 0, readBytes);
+				using (var outStream = new MemoryStream())
+				{
+					Stream zipInput;
+					switch (mode)
+					{
+						case CompressionMode.Decompress:
+							zipInput = inStream;
+							break;
+						case CompressionMode.Compress:
+							zipInput = outStream;
+							break;
+						default:
+							throw new ArgumentOutOfRangeException("mode");
+					}
+					using (var zipStream = new GZipStream(zipInput, mode))
+					{
+						Stream input = inStream;
+						Stream output = zipStream;
+						if (mode == CompressionMode.Decompress)
+						{
+							input = zipStream;
+							output = outStream;
+						}
 
-				totalReadBytes += readBytes;
-				this.OnPercentProgress(Utilities.GetProgressPercent(totalBytes, totalReadBytes));
+						var totalBytes = data.Length;
+						this.OnPercentProgress(0);
+
+						int readBytes;
+						int totalReadBytes = 0;
+						while ((readBytes = await input.ReadAsync(_buffer, 0, _buffer.Length)) != 0)
+						{
+							await output.WriteAsync(_buffer, 0, readBytes);
+
+							totalReadBytes += readBytes;
+							this.OnPercentProgress(Utilities.GetProgressPercent(totalBytes, totalReadBytes));
+						}
+					}
+					return outStream.ToArray();
+				}
 			}
 		}
 	}

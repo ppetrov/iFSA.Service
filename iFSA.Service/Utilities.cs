@@ -3,13 +3,13 @@ using System.IO;
 
 namespace iFSA.Service
 {
-	public class Utilities
+	public static class Utilities
 	{
 		public static byte[] Concat(byte[] x, byte[] y)
 		{
 			if (x == null) throw new ArgumentNullException("x");
-			if (x.Length == 0) throw new ArgumentOutOfRangeException("x");
 			if (y == null) throw new ArgumentNullException("y");
+			if (x.Length == 0) throw new ArgumentOutOfRangeException("x");
 			if (y.Length == 0) throw new ArgumentOutOfRangeException("y");
 
 			using (var ms = new MemoryStream(x.Length + y.Length))
@@ -26,6 +26,9 @@ namespace iFSA.Service
 			if (x == null) throw new ArgumentNullException("x");
 			if (y == null) throw new ArgumentNullException("y");
 			if (z == null) throw new ArgumentNullException("z");
+			if (x.Length == 0) throw new ArgumentOutOfRangeException("x");
+			if (y.Length == 0) throw new ArgumentOutOfRangeException("y");
+			if (z.Length == 0) throw new ArgumentOutOfRangeException("z");
 
 			using (var ms = new MemoryStream(x.Length + y.Length + z.Length))
 			{
