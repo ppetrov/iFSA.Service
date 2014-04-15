@@ -36,17 +36,17 @@ namespace iFSA.Service
 			using (_client) { }
 		}
 
-		public void LogRequest(string method)
+		protected void LogRequest(string method)
 		{
 			Trace.WriteLine(string.Format(@"Request to {0}({1})", this.Name, method));
 		}
 
-		public void LogRequest(byte[] data, string method)
+		protected void LogRequest(byte[] data, string method)
 		{
 			Trace.WriteLine(string.Format(@"Send {0} bytes to {1}({2})", data.Length, this.Name, method));
 		}
 
-		public void LogResponse(byte[] data, string method)
+		protected void LogResponse(byte[] data, string method)
 		{
 			Trace.WriteLine(string.Format(@"Read {0} bytes from '{1}'({2})", data.Length, this.Name, method));
 		}

@@ -43,6 +43,7 @@ namespace iFSA.Service.Update
 			await this.TransferHandler.WriteAsync(stream, data);
 
 			var bytes = await this.TransferHandler.ReadDataAsync(stream);
+			this.LogResponse(bytes, context);
 			if (bytes.Length != TransferHandler.NoDataBytes.Length)
 			{
 				return new RequestHeader().Setup(new MemoryStream(bytes));
@@ -61,6 +62,7 @@ namespace iFSA.Service.Update
 			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)method);
 
 			var data = await this.TransferHandler.ReadDataAsync(stream);
+			this.LogResponse(data, context);
 
 			if (data.Length != TransferHandler.NoDataBytes.Length)
 			{
@@ -119,6 +121,7 @@ namespace iFSA.Service.Update
 			await this.TransferHandler.WriteAsync(stream, data);
 
 			var bytes = await this.TransferHandler.ReadDataAsync(stream);
+			this.LogResponse(bytes, context);
 			if (bytes.Length != TransferHandler.NoDataBytes.Length)
 			{
 				return bytes;

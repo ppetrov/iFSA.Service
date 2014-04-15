@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -16,5 +17,15 @@ namespace iFSA.Service
 		}
 
 		public abstract Task ProcessAsync(Stream stream, byte methodId);
+
+		protected void LogRequest(byte[] data, string method)
+		{
+			Trace.WriteLine(string.Format(@"Read {0} bytes from client ({1})", data.Length, method));
+		}
+
+		protected void LogResponse(byte[] data, string method)
+		{
+			Trace.WriteLine(string.Format(@"Send {0} bytes to client ({1})", data.Length, method));
+		}
 	}
 }

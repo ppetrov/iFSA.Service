@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -63,7 +62,7 @@ namespace iFSA.Service.Logs
 				this.Write(ms, _filesFolders, LogMethod.UploadFiles);
 
 				var data = ms.ToArray();
-				Trace.WriteLine(string.Format(@"Send {0} bytes to client ({1})", data.Length, method));
+				this.LogResponse(data, method.ToString());
 				await handler.WriteAsync(stream, data);
 			}
 		}
@@ -71,7 +70,7 @@ namespace iFSA.Service.Logs
 		private async Task ConfigureLogsAsync(Stream stream, TransferHandler handler, LogMethod method)
 		{
 			var data = await handler.ReadDataAsync(stream);
-			Trace.WriteLine(string.Format(@"Read {0} bytes from client ({1})", data.Length, method));
+			this.LogRequest(data, method.ToString());
 			this.Configure(data, method);
 		}
 
@@ -87,28 +86,28 @@ namespace iFSA.Service.Logs
 
 		private async Task UploadLogsAsync(Stream stream, TransferHandler handler, LogMethod method)
 		{
-			var data = await Upload(await handler.ReadDataAsync(stream), _logFolders, true);
-			Trace.WriteLine(string.Format(@"Send {0} bytes to client ({1})", data.Length, method));
+			var data = await Upload(await handler.ReadDataAsync(stream), _logFolders, method, true);
+			this.LogResponse(data, method.ToString());
 			await handler.WriteAsync(stream, data);
 		}
 
 		private async Task UploadFilesAsync(Stream stream, TransferHandler handler, LogMethod method)
 		{
-			var data = await Upload(await handler.ReadDataAsync(stream), _filesFolders, false);
-			Trace.WriteLine(string.Format(@"Send {0} bytes to client ({1})", data.Length, method));
+			var data = await Upload(await handler.ReadDataAsync(stream), _filesFolders, method, false);
+			this.LogResponse(data, method.ToString());
 			await handler.WriteAsync(stream, data);
 		}
 
 		private async Task UploadDatabaseAsync(Stream stream, TransferHandler handler, LogMethod method)
 		{
-			var data = await Upload(await handler.ReadDataAsync(stream), _dbFolders, false);
-			Trace.WriteLine(string.Format(@"Send {0} bytes to client ({1})", data.Length, method));
+			var data = await Upload(await handler.ReadDataAsync(stream), _dbFolders, method, false);
+			this.LogResponse(data, method.ToString());
 			await handler.WriteAsync(stream, data);
 		}
 
 		private void Configure(byte[] data, LogMethod method)
 		{
-			Trace.WriteLine(string.Format(@"Send {0} bytes to client ({1})", data.Length, method));
+			this.LogResponse(data, method.ToString());
 
 			using (var ms = new MemoryStream(data))
 			{
@@ -143,8 +142,10 @@ namespace iFSA.Service.Logs
 			}
 		}
 
-		private async Task<byte[]> Upload(byte[] data, string[] folders, bool append)
+		private async Task<byte[]> Upload(byte[] data, string[] folders, LogMethod method, bool append)
 		{
+			this.LogRequest(data, method.ToString());
+
 			var success = false;
 
 			using (var ms = new MemoryStream(data))

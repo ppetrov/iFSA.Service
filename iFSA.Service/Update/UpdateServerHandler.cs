@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -42,14 +41,17 @@ namespace iFSA.Service.Update
 		{
 			var networkBuffer = TransferHandler.NoDataBytes;
 
-			var package = _packages[BitConverter.ToInt32(await handler.ReadDataAsync(stream), 0)];
+			var context = UpdateMethod.GetVersion.ToString();
+			var input = await handler.ReadDataAsync(stream);
+			this.LogRequest(input, context);
+			var package = _packages[BitConverter.ToInt32(input, 0)];
 			if (package != null)
 			{
 				networkBuffer = package.Header.NetworkBuffer;
 			}
 
 			var data = networkBuffer;
-			Trace.WriteLine(string.Format(@"Send {0} bytes to client ({1})", data.Length, UpdateMethod.GetVersion));
+			this.LogResponse(data, context);
 			await handler.WriteAsync(stream, data);
 		}
 
@@ -75,13 +77,14 @@ namespace iFSA.Service.Update
 			}
 
 			var data = networkBuffer;
-			Trace.WriteLine(string.Format(@"Send {0} bytes to client ({1})", data.Length, UpdateMethod.GetVersions));
+			this.LogResponse(data, UpdateMethod.GetVersions.ToString());
 			await handler.WriteAsync(stream, data);
 		}
 
 		private async Task UploadPackageAsync(Stream stream, TransferHandler handler)
 		{
 			var input = await handler.ReadDataAsync(stream);
+			this.LogRequest(input, UpdateMethod.UploadPackage.ToString());
 
 			using (var ms = new MemoryStream(input))
 			{
@@ -98,7 +101,10 @@ namespace iFSA.Service.Update
 		{
 			var networkBuffer = TransferHandler.NoDataBytes;
 
-			var header = new RequestHeader().Setup(new MemoryStream(await handler.ReadDataAsync(stream)));
+			var input = await handler.ReadDataAsync(stream);
+			this.LogRequest(input, UpdateMethod.DownloadPackage.ToString());
+
+			var header = new RequestHeader().Setup(new MemoryStream(input));
 			var package = _packages[(int)header.ClientPlatform];
 			if (package != null && package.Header.Version > header.Version)
 			{
@@ -106,7 +112,7 @@ namespace iFSA.Service.Update
 			}
 
 			var data = networkBuffer;
-			Trace.WriteLine(string.Format(@"Send {0} bytes to client ({1})", data.Length, UpdateMethod.DownloadPackage));
+			this.LogResponse(data, UpdateMethod.DownloadPackage.ToString());
 			await handler.WriteAsync(stream, data);
 		}
 	}
