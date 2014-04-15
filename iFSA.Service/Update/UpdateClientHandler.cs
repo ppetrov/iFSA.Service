@@ -9,6 +9,11 @@ namespace iFSA.Service.Update
 	{
 		private readonly CompressionHelper _compressionHelper;
 
+		public override string Name
+		{
+			get { return @"Update"; }
+		}
+
 		public CompressionHelper CompressionHelper
 		{
 			get { return _compressionHelper; }
@@ -28,13 +33,19 @@ namespace iFSA.Service.Update
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
-			await this.TransferHandler.WriteAsync(stream, this.Id, (byte)UpdateMethod.GetVersion);
-			await this.TransferHandler.WriteAsync(stream, BitConverter.GetBytes((int)platform));
-			var data = await this.TransferHandler.ReadDataAsync(stream);
+			var method = UpdateMethod.GetVersion;
+			var context = method.ToString();
+			this.LogRequest(context);
+			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)method);
 
-			if (data.Length != TransferHandler.NoDataBytes.Length)
+			var data = BitConverter.GetBytes((int)platform);
+			this.LogRequest(data, context);
+			await this.TransferHandler.WriteAsync(stream, data);
+
+			var bytes = await this.TransferHandler.ReadDataAsync(stream);
+			if (bytes.Length != TransferHandler.NoDataBytes.Length)
 			{
-				return new RequestHeader().Setup(new MemoryStream(data));
+				return new RequestHeader().Setup(new MemoryStream(bytes));
 			}
 
 			return null;
@@ -44,7 +55,11 @@ namespace iFSA.Service.Update
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
-			await this.TransferHandler.WriteAsync(stream, this.Id, (byte)UpdateMethod.GetVersions);
+			var method = UpdateMethod.GetVersions;
+			var context = method.ToString();
+			this.LogRequest(context);
+			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)method);
+
 			var data = await this.TransferHandler.ReadDataAsync(stream);
 
 			if (data.Length != TransferHandler.NoDataBytes.Length)
@@ -71,13 +86,22 @@ namespace iFSA.Service.Update
 			if (package == null) throw new ArgumentNullException("package");
 
 			var data = Utilities.Concat(package.Header.NetworkBuffer, package.Data);
-			var input = data;
 			if (this.TransferHandler.EnableCompression)
 			{
+#if ASYNC
+				data = await _compressionHelper.CompressAsync(data);
+#else
 				input = await Task.Run(() => _compressionHelper.Compress(data)).ConfigureAwait(false);
+#endif
 			}
-			await this.TransferHandler.WriteAsync(stream, this.Id, (byte)UpdateMethod.UploadPackage);
-			await this.TransferHandler.WriteAsync(stream, input);
+
+			var method = UpdateMethod.UploadPackage;
+			var context = method.ToString();
+			this.LogRequest(context);
+			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)method);
+
+			this.LogRequest(data, context);
+			await this.TransferHandler.WriteAsync(stream, data);
 		}
 
 		public async Task<byte[]> DownloadPackageAsync(Stream stream, RequestHeader header)
@@ -85,13 +109,19 @@ namespace iFSA.Service.Update
 			if (stream == null) throw new ArgumentNullException("stream");
 			if (header == null) throw new ArgumentNullException("header");
 
-			await this.TransferHandler.WriteAsync(stream, this.Id, (byte)UpdateMethod.DownloadPackage);
-			await this.TransferHandler.WriteAsync(stream, header.NetworkBuffer);
-			var data = await this.TransferHandler.ReadDataAsync(stream);
+			var method = UpdateMethod.DownloadPackage;
+			var context = method.ToString();
+			this.LogRequest(context);
+			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)method);
 
-			if (data.Length != TransferHandler.NoDataBytes.Length)
+			var data = header.NetworkBuffer;
+			this.LogRequest(data, context);
+			await this.TransferHandler.WriteAsync(stream, data);
+
+			var bytes = await this.TransferHandler.ReadDataAsync(stream);
+			if (bytes.Length != TransferHandler.NoDataBytes.Length)
 			{
-				return data;
+				return bytes;
 			}
 
 			return null;

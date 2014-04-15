@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using iFSA.Service;
 using iFSA.Service.Logs;
 using iFSA.Service.Update;
@@ -12,7 +13,7 @@ namespace ConsoleDemo
 {
 	class Program
 	{
-		static void Main(string[] args)
+		private static void Main(string[] args)
 		{
 			var hostname = @"127.0.0.1";
 			var port = 11111;

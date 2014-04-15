@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -47,7 +48,9 @@ namespace iFSA.Service.Update
 				networkBuffer = package.Header.NetworkBuffer;
 			}
 
-			await handler.WriteAsync(stream, networkBuffer);
+			var data = networkBuffer;
+			Trace.WriteLine(string.Format(@"Send {0} bytes to client ({1})", data.Length, UpdateMethod.GetVersion));
+			await handler.WriteAsync(stream, data);
 		}
 
 		private async Task GetVersionsAsync(Stream stream, TransferHandler handler)
@@ -71,7 +74,9 @@ namespace iFSA.Service.Update
 				}
 			}
 
-			await handler.WriteAsync(stream, networkBuffer);
+			var data = networkBuffer;
+			Trace.WriteLine(string.Format(@"Send {0} bytes to client ({1})", data.Length, UpdateMethod.GetVersions));
+			await handler.WriteAsync(stream, data);
 		}
 
 		private async Task UploadPackageAsync(Stream stream, TransferHandler handler)
@@ -100,7 +105,9 @@ namespace iFSA.Service.Update
 				networkBuffer = package.Data;
 			}
 
-			await handler.WriteAsync(stream, networkBuffer);
+			var data = networkBuffer;
+			Trace.WriteLine(string.Format(@"Send {0} bytes to client ({1})", data.Length, UpdateMethod.DownloadPackage));
+			await handler.WriteAsync(stream, data);
 		}
 	}
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -28,6 +29,7 @@ namespace iFSA.Service
 
 		public async Task StartAsync()
 		{
+			Trace.WriteLine(string.Format(@"Start server:{0}", _listener.LocalEndpoint));
 			try
 			{
 				_isRunning = true;
@@ -51,6 +53,8 @@ namespace iFSA.Service
 
 		public void Stop()
 		{
+			Trace.WriteLine(string.Format(@"Stop server:{0}", _listener.LocalEndpoint));
+
 			_isRunning = false;
 			_listener.Stop();
 		}
@@ -59,6 +63,8 @@ namespace iFSA.Service
 		{
 			try
 			{
+				Trace.WriteLine(string.Format(@"Client connected"));
+
 				using (client)
 				{
 					using (var s = client.GetStream())
@@ -86,6 +92,8 @@ namespace iFSA.Service
 			{
 				ex.Log();
 			}
+
+			Trace.WriteLine(string.Format(@"Client disconnected"));
 		}
 	}
 }

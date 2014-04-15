@@ -14,6 +14,11 @@ namespace iFSA.Service.Logs
 			get { return _packageHelper; }
 		}
 
+		public override string Name
+		{
+			get { return @"Logs"; }
+		}
+
 		public LogsClientHandler(byte id, string hostname, int port)
 			: base(id, hostname, port)
 		{
@@ -25,8 +30,13 @@ namespace iFSA.Service.Logs
 
 		public async Task<LogConfig[]> GetConfigsAsync()
 		{
-			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)LogMethod.GetConfigs);
+			var method = LogMethod.GetConfigs;
+			var context = method.ToString();
+			this.LogRequest(context);
+			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)method);
+
 			var data = await this.TransferHandler.ReadDataAsync(this.Stream);
+			this.LogResponse(data, context);
 
 			if (data.Length != TransferHandler.NoDataBytes.Length)
 			{
@@ -50,8 +60,14 @@ namespace iFSA.Service.Logs
 		{
 			if (logConfig == null) throw new ArgumentNullException("logConfig");
 
-			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)logConfig.LogMethod);
-			await this.TransferHandler.WriteAsync(this.Stream, logConfig.NetworkBuffer);
+			var method = logConfig.LogMethod;
+			var context = method.ToString();
+			this.LogRequest(context);
+			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)method);
+
+			var data = logConfig.NetworkBuffer;
+			this.LogRequest(data, context);
+			await this.TransferHandler.WriteAsync(this.Stream, data);
 		}
 
 		public async Task<bool> UploadLogsAsync(RequestHeader header, ClientFile[] logs)
@@ -83,12 +99,17 @@ namespace iFSA.Service.Logs
 		private async Task<bool> Upload(RequestHeader header, ClientFile[] files, LogMethod method)
 		{
 			var package = await _packageHelper.PackAsync(files);
-
+			var context = method.ToString();
+			this.LogRequest(context);
 			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)method);
-			await this.TransferHandler.WriteAsync(this.Stream, Utilities.Concat(header.NetworkBuffer, package));
 
-			var data = await this.TransferHandler.ReadDataAsync(this.Stream);
-			return Convert.ToBoolean(BitConverter.ToInt32(data, 0));
+			var data = Utilities.Concat(header.NetworkBuffer, package);
+			this.LogRequest(data, context);
+			await this.TransferHandler.WriteAsync(this.Stream, data);
+
+			var bytes = await this.TransferHandler.ReadDataAsync(this.Stream);
+			this.LogResponse(bytes, context);
+			return Convert.ToBoolean(BitConverter.ToInt32(bytes, 0));
 		}
 	}
 }

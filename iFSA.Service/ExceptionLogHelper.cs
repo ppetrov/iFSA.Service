@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace iFSA.Service
 {
@@ -6,7 +7,7 @@ namespace iFSA.Service
 	{
 		public static void Log(this Exception e)
 		{
-			Console.WriteLine(e.ToString());
+			Trace.WriteLine(e);
 		}
 	}
 }
