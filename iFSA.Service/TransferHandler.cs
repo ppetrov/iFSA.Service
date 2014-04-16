@@ -10,8 +10,6 @@ namespace iFSA.Service
 
 		private readonly byte[] _buffer = new byte[16 * 1024];
 
-		public bool EnableCompression { get; private set; }
-
 		public event EventHandler<decimal> WriteProgress;
 		private void OnWriteProgress(decimal e)
 		{
@@ -26,16 +24,6 @@ namespace iFSA.Service
 			if (handler != null) handler(this, e);
 		}
 
-		public TransferHandler()
-			: this(true)
-		{
-		}
-
-		public TransferHandler(bool enableCompression)
-		{
-			this.EnableCompression = enableCompression;
-		}
-
 		public async Task WriteAsync(Stream stream, byte handlerId, byte methodId)
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
@@ -45,23 +33,19 @@ namespace iFSA.Service
 			await stream.WriteAsync(_buffer, 0, 2);
 		}
 
-		public async Task WriteAsync(Stream stream, byte[] input)
+		public async Task WriteAsync(Stream stream, byte[] data)
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
-			if (input == null) throw new ArgumentNullException("input");
-			if (input.Length == 0) throw new ArgumentOutOfRangeException("input");
+			if (data == null) throw new ArgumentNullException("data");
+			if (data.Length == 0) throw new ArgumentOutOfRangeException("data");
 
 			this.OnWriteProgress(0);
 
-			var data = input;
-			if (this.EnableCompression)
-			{
 #if ASYNC
-				data = await new CompressionHelper(_buffer).CompressAsync(input);
+			data = await new CompressionHelper(_buffer).CompressAsync(data);
 #else
-				data = await Task.Run(() => new CompressionHelper(_buffer).Compress(input)).ConfigureAwait(false);
+			data = await Task.Run(() => new CompressionHelper(_buffer).Compress(input)).ConfigureAwait(false);
 #endif
-			}
 
 			// Write size
 			var totalBytes = data.Length;
@@ -121,15 +105,12 @@ namespace iFSA.Service
 					this.OnReadProgress(100);
 				}
 				var input = output.GetBuffer();
-				if (this.EnableCompression)
-				{
+
 #if ASYNC
-					return await new CompressionHelper(_buffer).DecompressAsync(input);
+				return await new CompressionHelper(_buffer).DecompressAsync(input);
 #else
-					return await Task.Run(() => new CompressionHelper(_buffer).Decompress(input)).ConfigureAwait(false);
+				return await Task.Run(() => new CompressionHelper(_buffer).Decompress(input)).ConfigureAwait(false);
 #endif
-				}
-				return input;
 			}
 		}
 

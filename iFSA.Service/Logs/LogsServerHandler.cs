@@ -7,16 +7,61 @@ namespace iFSA.Service.Logs
 {
 	public sealed class LogsServerHandler : ServerHandlerBase
 	{
+		public static readonly string ConfigName = @"logs.cfg";
+
 		private static readonly byte[] ZeroBytes = { 0, 0, 0, 0 };
 		private static readonly byte[] OneBytes = { 1, 0, 0, 0 };
 
-		private readonly string[] _dbFolders = new string[3];
-		private readonly string[] _logFolders = new string[3];
-		private readonly string[] _filesFolders = new string[3];
+		private readonly string[] _dbFolders = new string[Server.SupportedPlatforms];
+		private readonly string[] _logFolders = new string[Server.SupportedPlatforms];
+		private readonly string[] _filesFolders = new string[Server.SupportedPlatforms];
 
 		public LogsServerHandler(byte id)
 			: base(id)
 		{
+			for (var i = 0; i < Server.SupportedPlatforms; i++)
+			{
+				_dbFolders[i] = string.Empty;
+				_logFolders[i] = string.Empty;
+				_filesFolders[i] = string.Empty;
+			}
+		}
+
+		public override async Task InitializeAsync()
+		{
+			try
+			{
+				var folders = new string[3 * Server.SupportedPlatforms];
+				for (var i = 0; i < folders.Length; i++)
+				{
+					folders[i] = string.Empty;
+				}
+
+				using (var sr = new StreamReader(ConfigName))
+				{
+					var index = 0;
+
+					string line;
+					while ((line = await sr.ReadLineAsync()) != null)
+					{
+						if (index < folders.Length)
+						{
+							folders[index++] = line;
+						}
+					}
+				}
+
+				var offset = 0;
+				foreach (var f in new[] { _dbFolders, _logFolders, _filesFolders })
+				{
+					for (var i = 0; i < f.Length; i++)
+					{
+						f[i] = folders[i + offset];
+					}
+					offset += Server.SupportedPlatforms;
+				}
+			}
+			catch (FileNotFoundException) { }
 		}
 
 		public override async Task ProcessAsync(Stream stream, byte methodId)
@@ -71,78 +116,67 @@ namespace iFSA.Service.Logs
 		{
 			var data = await handler.ReadDataAsync(stream);
 			this.LogRequest(data, method.ToString());
-			this.Configure(data, method);
+			await this.ConfigureAsync(data, method);
 		}
 
 		private async Task ConfigureFilesAsync(Stream stream, TransferHandler handler, LogMethod method)
 		{
-			this.Configure(await handler.ReadDataAsync(stream), method);
+			await this.ConfigureAsync(await handler.ReadDataAsync(stream), method);
 		}
 
 		private async Task ConfigureDatabaseAsync(Stream stream, TransferHandler handler, LogMethod method)
 		{
-			this.Configure(await handler.ReadDataAsync(stream), method);
+			await this.ConfigureAsync(await handler.ReadDataAsync(stream), method);
 		}
 
 		private async Task UploadLogsAsync(Stream stream, TransferHandler handler, LogMethod method)
 		{
-			var data = await Upload(await handler.ReadDataAsync(stream), _logFolders, method, true);
+			var data = await UploadAsync(await handler.ReadDataAsync(stream), _logFolders, method, true);
 			this.LogResponse(data, method.ToString());
 			await handler.WriteAsync(stream, data);
 		}
 
 		private async Task UploadFilesAsync(Stream stream, TransferHandler handler, LogMethod method)
 		{
-			var data = await Upload(await handler.ReadDataAsync(stream), _filesFolders, method, false);
+			var data = await UploadAsync(await handler.ReadDataAsync(stream), _filesFolders, method, false);
 			this.LogResponse(data, method.ToString());
 			await handler.WriteAsync(stream, data);
 		}
 
 		private async Task UploadDatabaseAsync(Stream stream, TransferHandler handler, LogMethod method)
 		{
-			var data = await Upload(await handler.ReadDataAsync(stream), _dbFolders, method, false);
+			var data = await UploadAsync(await handler.ReadDataAsync(stream), _dbFolders, method, false);
 			this.LogResponse(data, method.ToString());
 			await handler.WriteAsync(stream, data);
 		}
 
-		private void Configure(byte[] data, LogMethod method)
+		private async Task ConfigureAsync(byte[] data, LogMethod method)
 		{
 			this.LogResponse(data, method.ToString());
 
 			using (var ms = new MemoryStream(data))
 			{
 				var logConfig = new LogConfig().Setup(ms);
-				var folders = GetConfigFolders(logConfig);
+				string[] folders = null;
+				switch (method)
+				{
+					case LogMethod.ConfigureLogs:
+						folders = _logFolders;
+						break;
+					case LogMethod.ConfigureFiles:
+						folders = _filesFolders;
+						break;
+					case LogMethod.ConfigureDatabase:
+						folders = _dbFolders;
+						break;
+				}
 				folders[(int)logConfig.RequestHeader.ClientPlatform] = logConfig.Folder;
+
+				await this.SaveFoldersAsync();
 			}
 		}
 
-		private string[] GetConfigFolders(LogConfig logConfig)
-		{
-			if (logConfig.LogMethod == LogMethod.ConfigureLogs)
-			{
-				return _logFolders;
-			}
-			if (logConfig.LogMethod == LogMethod.ConfigureFiles)
-			{
-				return _filesFolders;
-			}
-			if (logConfig.LogMethod == LogMethod.ConfigureDatabase)
-			{
-				return _dbFolders;
-			}
-			throw new ArgumentOutOfRangeException();
-		}
-
-		private void Write(Stream stream, IList<string> folders, LogMethod method)
-		{
-			for (var i = 0; i < folders.Count; i++)
-			{
-				NetworkHelper.WriteRaw(stream, new LogConfig(new RequestHeader((ClientPlatform)i, RequestHeader.EmptyVersion, string.Empty, string.Empty), method, folders[i] ?? string.Empty).NetworkBuffer);
-			}
-		}
-
-		private async Task<byte[]> Upload(byte[] data, string[] folders, LogMethod method, bool append)
+		private async Task<byte[]> UploadAsync(byte[] data, string[] folders, LogMethod method, bool append)
 		{
 			this.LogRequest(data, method.ToString());
 
@@ -165,6 +199,28 @@ namespace iFSA.Service.Logs
 			}
 
 			return success ? OneBytes : ZeroBytes;
+		}
+
+		private async Task SaveFoldersAsync()
+		{
+			using (var sw = new StreamWriter(ConfigName))
+			{
+				foreach (var folders in new[] { _dbFolders, _logFolders, _filesFolders })
+				{
+					foreach (var folder in folders)
+					{
+						await sw.WriteLineAsync(folder);
+					}
+				}
+			}
+		}
+
+		private void Write(Stream stream, IList<string> folders, LogMethod method)
+		{
+			for (var i = 0; i < folders.Count; i++)
+			{
+				NetworkHelper.WriteRaw(stream, new LogConfig(new RequestHeader((ClientPlatform)i, RequestHeader.EmptyVersion, string.Empty, string.Empty), method, folders[i] ?? string.Empty).NetworkBuffer);
+			}
 		}
 	}
 }

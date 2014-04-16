@@ -29,10 +29,8 @@ namespace iFSA.Service.Update
 			_compressionHelper = new CompressionHelper(new byte[80 * 1024]);
 		}
 
-		public async Task<RequestHeader> GetPackageAsync(Stream stream, ClientPlatform platform)
+		public async Task<RequestHeader> GetPackageAsync(ClientPlatform platform)
 		{
-			if (stream == null) throw new ArgumentNullException("stream");
-
 			var method = UpdateMethod.GetVersion;
 			var context = method.ToString();
 			this.LogRequest(context);
@@ -40,9 +38,9 @@ namespace iFSA.Service.Update
 
 			var data = BitConverter.GetBytes((int)platform);
 			this.LogRequest(data, context);
-			await this.TransferHandler.WriteAsync(stream, data);
+			await this.TransferHandler.WriteAsync(this.Stream, data);
 
-			var bytes = await this.TransferHandler.ReadDataAsync(stream);
+			var bytes = await this.TransferHandler.ReadDataAsync(this.Stream);
 			this.LogResponse(bytes, context);
 			if (bytes.Length != TransferHandler.NoDataBytes.Length)
 			{
@@ -52,16 +50,14 @@ namespace iFSA.Service.Update
 			return null;
 		}
 
-		public async Task<RequestHeader[]> GetPackagesAsync(Stream stream)
+		public async Task<RequestHeader[]> GetPackagesAsync()
 		{
-			if (stream == null) throw new ArgumentNullException("stream");
-
 			var method = UpdateMethod.GetVersions;
 			var context = method.ToString();
 			this.LogRequest(context);
 			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)method);
 
-			var data = await this.TransferHandler.ReadDataAsync(stream);
+			var data = await this.TransferHandler.ReadDataAsync(this.Stream);
 			this.LogResponse(data, context);
 
 			if (data.Length != TransferHandler.NoDataBytes.Length)
@@ -82,28 +78,18 @@ namespace iFSA.Service.Update
 			return null;
 		}
 
-		public async Task UploadPackageAsync(Stream stream, RequestPackage package)
+		public async Task UploadPackageAsync(RequestPackage package)
 		{
-			if (stream == null) throw new ArgumentNullException("stream");
 			if (package == null) throw new ArgumentNullException("package");
-
-			var data = Utilities.Concat(package.Header.NetworkBuffer, package.Data);
-			if (this.TransferHandler.EnableCompression)
-			{
-#if ASYNC
-				data = await _compressionHelper.CompressAsync(data);
-#else
-				input = await Task.Run(() => _compressionHelper.Compress(data)).ConfigureAwait(false);
-#endif
-			}
 
 			var method = UpdateMethod.UploadPackage;
 			var context = method.ToString();
 			this.LogRequest(context);
 			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)method);
 
+			var data = Utilities.Concat(package.Header.NetworkBuffer, package.Data);
 			this.LogRequest(data, context);
-			await this.TransferHandler.WriteAsync(stream, data);
+			await this.TransferHandler.WriteAsync(this.Stream, data);
 		}
 
 		public async Task<byte[]> DownloadPackageAsync(Stream stream, RequestHeader header)

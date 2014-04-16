@@ -16,6 +16,8 @@ namespace iFSA.Service
 			this.Id = id;
 		}
 
+		public abstract Task InitializeAsync();
+
 		public abstract Task ProcessAsync(Stream stream, byte methodId);
 
 		protected void LogRequest(byte[] data, string method)

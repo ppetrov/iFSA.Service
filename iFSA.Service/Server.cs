@@ -9,6 +9,8 @@ namespace iFSA.Service
 {
 	public sealed class Server
 	{
+		public const int SupportedPlatforms = 3;
+
 		private volatile bool _isRunning;
 		private readonly TcpListener _listener;
 		private readonly Dictionary<byte, ServerHandlerBase> _handlers = new Dictionary<byte, ServerHandlerBase>();
@@ -20,9 +22,11 @@ namespace iFSA.Service
 			_listener = new TcpListener(address, port);
 		}
 
-		public void Register(ServerHandlerBase handler)
+		public async Task Register(ServerHandlerBase handler)
 		{
 			if (handler == null) throw new ArgumentNullException("handler");
+
+			await handler.InitializeAsync();
 
 			_handlers.Add(handler.Id, handler);
 		}
