@@ -1,8 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using iFSA.Service;
+using iFSA.Service.Update;
 
-namespace iFSA.Service.Update
+namespace iFSA.Update
 {
 	public sealed class UpdateServerHandler : ServerHandlerBase
 	{

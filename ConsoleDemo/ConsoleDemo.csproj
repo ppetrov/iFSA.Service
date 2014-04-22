@@ -43,9 +43,17 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\iFSA.Service.Logs\iFSA.Service.Logs.csproj">
+      <Project>{0975457C-6C60-4786-B316-5E80EC77370A}</Project>
+      <Name>iFSA.Service.Logs</Name>
+    </ProjectReference>
     <ProjectReference Include="..\iFSA.Service\iFSA.Service.csproj">
       <Project>{CFA78E2A-04A9-4537-9B3B-8A5D142F585B}</Project>
       <Name>iFSA.Service</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\iFSA.Service.Update\iFSA.Service.Update.csproj">
+      <Project>{5440E587-DFF7-4386-A78F-512880483070}</Project>
+      <Name>iFSA.Service.Update</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

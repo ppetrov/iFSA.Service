@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using iFSA.Service;
 using iFSA.Service.Logs;
 using iFSA.Service.Update;
+using iFSA.Update;
 
 namespace ConsoleDemo
 {

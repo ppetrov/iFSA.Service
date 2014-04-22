@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{CFA78E2A-04A9-4537-9B3B-8A5D142F585B}</ProjectGuid>
+    <ProjectGuid>{5440E587-DFF7-4386-A78F-512880483070}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>iFSA.Service</RootNamespace>
-    <AssemblyName>iFSA.Service</AssemblyName>
+    <RootNamespace>iFSA.Service.Update</RootNamespace>
+    <AssemblyName>iFSA.Service.Update</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -25,32 +25,25 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;ASYNC</DefineConstants>
+    <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClientFile.cs" />
-    <Compile Include="CompressionHelper.cs" />
-    <Compile Include="RequestPackage.cs" />
-    <Compile Include="INetworkTransferable.cs" />
-    <Compile Include="NetworkHelper.cs" />
-    <Compile Include="RequestHeader.cs" />
-    <Compile Include="PackageHelper.cs" />
-    <Compile Include="ClientPlatform.cs" />
-    <Compile Include="ClientHandler.cs" />
-    <Compile Include="ExceptionLogHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Server.cs" />
-    <Compile Include="ServerHandlerBase.cs" />
-    <Compile Include="TransferHandler.cs" />
-    <Compile Include="Utilities.cs" />
+    <Compile Include="UpdateClientHandler.cs" />
+    <Compile Include="UpdateMethod.cs" />
+    <Compile Include="UpdateServerHandler.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\iFSA.Service\iFSA.Service.csproj">
+      <Project>{CFA78E2A-04A9-4537-9B3B-8A5D142F585B}</Project>
+      <Name>iFSA.Service</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
