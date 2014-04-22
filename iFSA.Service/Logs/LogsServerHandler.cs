@@ -68,37 +68,37 @@ namespace iFSA.Service.Logs
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
-			var h = new TransferHandler();
+			var h = new TransferHandler(stream);
 			var method = (LogMethod)methodId;
 			switch (method)
 			{
 				case LogMethod.GetConfigs:
-					await this.GetConfigsAsync(stream, h, method);
+					await this.GetConfigsAsync(h, method);
 					break;
 				case LogMethod.ConfigureLogs:
-					await this.ConfigureLogsAsync(stream, h, method);
+					await this.ConfigureLogsAsync(h, method);
 					break;
 				case LogMethod.ConfigureFiles:
-					await this.ConfigureFilesAsync(stream, h, method);
+					await this.ConfigureFilesAsync(h, method);
 					break;
 				case LogMethod.ConfigureDatabase:
-					await this.ConfigureDatabaseAsync(stream, h, method);
+					await this.ConfigureDatabaseAsync(h, method);
 					break;
 				case LogMethod.UploadLogs:
-					await this.UploadLogsAsync(stream, h, method);
+					await this.UploadLogsAsync(h, method);
 					break;
 				case LogMethod.UploadFiles:
-					await this.UploadFilesAsync(stream, h, method);
+					await this.UploadFilesAsync(h, method);
 					break;
 				case LogMethod.UploadDatabase:
-					await this.UploadDatabaseAsync(stream, h, method);
+					await this.UploadDatabaseAsync(h, method);
 					break;
 				default:
 					throw new ArgumentOutOfRangeException();
 			}
 		}
 
-		private async Task GetConfigsAsync(Stream stream, TransferHandler handler, LogMethod method)
+		private async Task GetConfigsAsync(TransferHandler handler, LogMethod method)
 		{
 			using (var ms = new MemoryStream())
 			{
@@ -108,46 +108,46 @@ namespace iFSA.Service.Logs
 
 				var data = ms.ToArray();
 				this.LogResponse(data, method.ToString());
-				await handler.WriteAsync(stream, data);
+				await handler.WriteAsync(data);
 			}
 		}
 
-		private async Task ConfigureLogsAsync(Stream stream, TransferHandler handler, LogMethod method)
+		private async Task ConfigureLogsAsync(TransferHandler handler, LogMethod method)
 		{
-			var data = await handler.ReadDataAsync(stream);
+			var data = await handler.ReadDataAsync();
 			this.LogRequest(data, method.ToString());
 			await this.ConfigureAsync(data, method);
 		}
 
-		private async Task ConfigureFilesAsync(Stream stream, TransferHandler handler, LogMethod method)
+		private async Task ConfigureFilesAsync(TransferHandler handler, LogMethod method)
 		{
-			await this.ConfigureAsync(await handler.ReadDataAsync(stream), method);
+			await this.ConfigureAsync(await handler.ReadDataAsync(), method);
 		}
 
-		private async Task ConfigureDatabaseAsync(Stream stream, TransferHandler handler, LogMethod method)
+		private async Task ConfigureDatabaseAsync(TransferHandler handler, LogMethod method)
 		{
-			await this.ConfigureAsync(await handler.ReadDataAsync(stream), method);
+			await this.ConfigureAsync(await handler.ReadDataAsync(), method);
 		}
 
-		private async Task UploadLogsAsync(Stream stream, TransferHandler handler, LogMethod method)
+		private async Task UploadLogsAsync(TransferHandler handler, LogMethod method)
 		{
-			var data = await UploadAsync(await handler.ReadDataAsync(stream), _logFolders, method, true);
+			var data = await UploadAsync(await handler.ReadDataAsync(), _logFolders, method, true);
 			this.LogResponse(data, method.ToString());
-			await handler.WriteAsync(stream, data);
+			await handler.WriteAsync(data);
 		}
 
-		private async Task UploadFilesAsync(Stream stream, TransferHandler handler, LogMethod method)
+		private async Task UploadFilesAsync(TransferHandler handler, LogMethod method)
 		{
-			var data = await UploadAsync(await handler.ReadDataAsync(stream), _filesFolders, method, false);
+			var data = await UploadAsync(await handler.ReadDataAsync(), _filesFolders, method, false);
 			this.LogResponse(data, method.ToString());
-			await handler.WriteAsync(stream, data);
+			await handler.WriteAsync(data);
 		}
 
-		private async Task UploadDatabaseAsync(Stream stream, TransferHandler handler, LogMethod method)
+		private async Task UploadDatabaseAsync(TransferHandler handler, LogMethod method)
 		{
-			var data = await UploadAsync(await handler.ReadDataAsync(stream), _dbFolders, method, false);
+			var data = await UploadAsync(await handler.ReadDataAsync(), _dbFolders, method, false);
 			this.LogResponse(data, method.ToString());
-			await handler.WriteAsync(stream, data);
+			await handler.WriteAsync(data);
 		}
 
 		private async Task ConfigureAsync(byte[] data, LogMethod method)
@@ -193,7 +193,7 @@ namespace iFSA.Service.Logs
 					{
 						userFolder.Create();
 					}
-					await new PackageHelper().UnpackAsync(ms, userFolder, append);
+					await new PackageHelper(new byte[80 * 1024]).UnpackAsync(ms, userFolder, append);
 					success = true;
 				}
 			}

@@ -10,7 +10,15 @@ namespace iFSA.Service
 		private static readonly char[] FileSeparator = { '*' };
 		private static readonly char SizeSeparator = '|';
 
-		private readonly byte[] _buffer = new byte[80 * 1024];
+		private readonly byte[] _buffer;
+
+		public PackageHelper(byte[] buffer)
+		{
+			if (buffer == null) throw new ArgumentNullException("buffer");
+			if (buffer.Length == 0) throw new ArgumentOutOfRangeException("buffer");
+
+			_buffer = buffer;
+		}
 
 		public event EventHandler<string> FileProgress;
 		private void OnFileProgress(string e)

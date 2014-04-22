@@ -57,32 +57,32 @@ namespace iFSA.Service.Update
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
-			var h = new TransferHandler();
+			var h = new TransferHandler(stream);
 			switch ((UpdateMethod)methodId)
 			{
 				case UpdateMethod.GetVersion:
-					await this.GetVersionAsync(stream, h);
+					await this.GetVersionAsync(h);
 					break;
 				case UpdateMethod.GetVersions:
-					await this.GetVersionsAsync(stream, h);
+					await this.GetVersionsAsync(h);
 					break;
 				case UpdateMethod.UploadPackage:
-					await this.UploadPackageAsync(stream, h);
+					await this.UploadPackageAsync(h);
 					break;
 				case UpdateMethod.DownloadPackage:
-					await this.DownloadPackageAsync(stream, h);
+					await this.DownloadPackageAsync(h);
 					break;
 				default:
 					throw new ArgumentOutOfRangeException();
 			}
 		}
 
-		private async Task GetVersionAsync(Stream stream, TransferHandler handler)
+		private async Task GetVersionAsync(TransferHandler handler)
 		{
 			var networkBuffer = TransferHandler.NoDataBytes;
 
 			var context = UpdateMethod.GetVersion.ToString();
-			var input = await handler.ReadDataAsync(stream);
+			var input = await handler.ReadDataAsync();
 			this.LogRequest(input, context);
 			var package = _packages[BitConverter.ToInt32(input, 0)];
 			if (package != null)
@@ -92,10 +92,10 @@ namespace iFSA.Service.Update
 
 			var data = networkBuffer;
 			this.LogResponse(data, context);
-			await handler.WriteAsync(stream, data);
+			await handler.WriteAsync(data);
 		}
 
-		private async Task GetVersionsAsync(Stream stream, TransferHandler handler)
+		private async Task GetVersionsAsync(TransferHandler handler)
 		{
 			var networkBuffer = TransferHandler.NoDataBytes;
 
@@ -118,12 +118,12 @@ namespace iFSA.Service.Update
 
 			var data = networkBuffer;
 			this.LogResponse(data, UpdateMethod.GetVersions.ToString());
-			await handler.WriteAsync(stream, data);
+			await handler.WriteAsync(data);
 		}
 
-		private async Task UploadPackageAsync(Stream stream, TransferHandler handler)
+		private async Task UploadPackageAsync(TransferHandler handler)
 		{
-			var input = await handler.ReadDataAsync(stream);
+			var input = await handler.ReadDataAsync();
 			this.LogRequest(input, UpdateMethod.UploadPackage.ToString());
 
 			using (var ms = new MemoryStream(input))
@@ -139,11 +139,11 @@ namespace iFSA.Service.Update
 			}
 		}
 
-		private async Task DownloadPackageAsync(Stream stream, TransferHandler handler)
+		private async Task DownloadPackageAsync(TransferHandler handler)
 		{
 			var networkBuffer = TransferHandler.NoDataBytes;
 
-			var input = await handler.ReadDataAsync(stream);
+			var input = await handler.ReadDataAsync();
 			this.LogRequest(input, UpdateMethod.DownloadPackage.ToString());
 
 			var header = new RequestHeader().Setup(new MemoryStream(input));
@@ -155,7 +155,7 @@ namespace iFSA.Service.Update
 
 			var data = networkBuffer;
 			this.LogResponse(data, UpdateMethod.DownloadPackage.ToString());
-			await handler.WriteAsync(stream, data);
+			await handler.WriteAsync(data);
 		}
 
 		private async Task SavePackageAsync(ClientPlatform platform, RequestPackage package)

@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 
 namespace iFSA.Service.Logs
 {
-	public sealed class LogsClientHandler : ClientHandlerBase
+	public sealed class LogsClientHandler : ClientHandler
 	{
-		private readonly PackageHelper _packageHelper = new PackageHelper();
+		private readonly PackageHelper _packageHelper = new PackageHelper(new byte[80 * 1024]);
 
 		public PackageHelper PackageHelper
 		{
@@ -19,8 +19,8 @@ namespace iFSA.Service.Logs
 			get { return @"Logs"; }
 		}
 
-		public LogsClientHandler(byte id, string hostname, int port)
-			: base(id, hostname, port)
+		public LogsClientHandler(byte id, TransferHandler transferHandler)
+			: base(id, transferHandler)
 		{
 #if DEBUG
 			this.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
@@ -33,9 +33,9 @@ namespace iFSA.Service.Logs
 			var method = LogMethod.GetConfigs;
 			var context = method.ToString();
 			this.LogRequest(context);
-			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)method);
+			await this.TransferHandler.WriteAsync(this.Id, (byte)method);
 
-			var data = await this.TransferHandler.ReadDataAsync(this.Stream);
+			var data = await this.TransferHandler.ReadDataAsync();
 			this.LogResponse(data, context);
 
 			if (data.Length != TransferHandler.NoDataBytes.Length)
@@ -63,11 +63,11 @@ namespace iFSA.Service.Logs
 			var method = logConfig.LogMethod;
 			var context = method.ToString();
 			this.LogRequest(context);
-			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)method);
+			await this.TransferHandler.WriteAsync(this.Id, (byte)method);
 
 			var data = logConfig.NetworkBuffer;
 			this.LogRequest(data, context);
-			await this.TransferHandler.WriteAsync(this.Stream, data);
+			await this.TransferHandler.WriteAsync(data);
 		}
 
 		public async Task<bool> UploadLogsAsync(RequestHeader header, ClientFile[] logs)
@@ -101,13 +101,13 @@ namespace iFSA.Service.Logs
 			var package = await _packageHelper.PackAsync(files);
 			var context = method.ToString();
 			this.LogRequest(context);
-			await this.TransferHandler.WriteAsync(this.Stream, this.Id, (byte)method);
+			await this.TransferHandler.WriteAsync(this.Id, (byte)method);
 
 			var data = Utilities.Concat(header.NetworkBuffer, package);
 			this.LogRequest(data, context);
-			await this.TransferHandler.WriteAsync(this.Stream, data);
+			await this.TransferHandler.WriteAsync(data);
 
-			var bytes = await this.TransferHandler.ReadDataAsync(this.Stream);
+			var bytes = await this.TransferHandler.ReadDataAsync();
 			this.LogResponse(bytes, context);
 			return Convert.ToBoolean(BitConverter.ToInt32(bytes, 0));
 		}

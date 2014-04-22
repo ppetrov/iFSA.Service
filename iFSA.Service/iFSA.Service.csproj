@@ -49,7 +49,7 @@
     <Compile Include="PackageHelper.cs" />
     <Compile Include="ClientPlatform.cs" />
     <Compile Include="Logs\LogsServerHandler.cs" />
-    <Compile Include="ClientHandlerBase.cs" />
+    <Compile Include="ClientHandler.cs" />
     <Compile Include="ExceptionLogHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Server.cs" />

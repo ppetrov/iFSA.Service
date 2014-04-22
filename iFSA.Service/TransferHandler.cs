@@ -8,6 +8,7 @@ namespace iFSA.Service
 	{
 		public static readonly byte[] NoDataBytes = { 255, 255, 255, 255 };
 
+		private readonly Stream _stream;
 		private readonly byte[] _buffer = new byte[16 * 1024];
 
 		public event EventHandler<decimal> WriteProgress;
@@ -24,18 +25,22 @@ namespace iFSA.Service
 			if (handler != null) handler(this, e);
 		}
 
-		public async Task WriteAsync(Stream stream, byte handlerId, byte methodId)
+		public TransferHandler(Stream stream)
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
-			_buffer[0] = handlerId;
-			_buffer[1] = methodId;
-			await stream.WriteAsync(_buffer, 0, 2);
+			_stream = stream;
 		}
 
-		public async Task WriteAsync(Stream stream, byte[] data)
+		public async Task WriteAsync(byte handlerId, byte methodId)
 		{
-			if (stream == null) throw new ArgumentNullException("stream");
+			_buffer[0] = handlerId;
+			_buffer[1] = methodId;
+			await _stream.WriteAsync(_buffer, 0, 2);
+		}
+
+		public async Task WriteAsync(byte[] data)
+		{
 			if (data == null) throw new ArgumentNullException("data");
 			if (data.Length == 0) throw new ArgumentOutOfRangeException("data");
 
@@ -50,40 +55,36 @@ namespace iFSA.Service
 			// Write size
 			var totalBytes = data.Length;
 			NetworkHelper.FillBytes(totalBytes, _buffer);
-			await stream.WriteAsync(_buffer, 0, NetworkHelper.GetBytesSize(totalBytes));
+			await _stream.WriteAsync(_buffer, 0, NetworkHelper.GetBytesSize(totalBytes));
 
 			// Write data
 			var bufferLength = _buffer.Length;
 			var chunks = (totalBytes / bufferLength) * bufferLength;
 			for (var i = 0; i < chunks; i += bufferLength)
 			{
-				await stream.WriteAsync(data, i, bufferLength);
+				await _stream.WriteAsync(data, i, bufferLength);
 				this.OnWriteProgress(Utilities.GetProgressPercent(totalBytes, i + bufferLength));
 			}
 			var remaining = totalBytes % bufferLength;
 			if (remaining != 0)
 			{
-				await stream.WriteAsync(data, chunks, remaining);
+				await _stream.WriteAsync(data, chunks, remaining);
 				this.OnWriteProgress(100);
 			}
 		}
 
-		public void WriteClose(Stream stream)
+		public async Task CloseAsync()
 		{
-			if (stream == null) throw new ArgumentNullException("stream");
-
 			_buffer[0] = byte.MaxValue;
-			stream.Write(_buffer, 0, 1);
+			await _stream.WriteAsync(_buffer, 0, 1);
 		}
 
-		public async Task<byte[]> ReadDataAsync(Stream stream)
+		public async Task<byte[]> ReadDataAsync()
 		{
-			if (stream == null) throw new ArgumentNullException("stream");
-
 			this.OnReadProgress(0);
 
 			// Read size
-			await ReadDataAsync(stream, _buffer, NetworkHelper.GetBytesSize(0));
+			await ReadDataAsync(_buffer, NetworkHelper.GetBytesSize(0));
 			var dataSize = BitConverter.ToInt32(_buffer, 0);
 
 			// Read data
@@ -93,14 +94,14 @@ namespace iFSA.Service
 				var chunks = (dataSize / bufferLength) * bufferLength;
 				for (var i = 0; i < chunks; i += bufferLength)
 				{
-					await this.ReadDataAsync(stream, _buffer, bufferLength);
+					await this.ReadDataAsync(_buffer, bufferLength);
 					await output.WriteAsync(_buffer, 0, bufferLength);
 					this.OnReadProgress(Utilities.GetProgressPercent(dataSize, i + bufferLength));
 				}
 				var remaining = dataSize % bufferLength;
 				if (remaining != 0)
 				{
-					await this.ReadDataAsync(stream, _buffer, remaining);
+					await this.ReadDataAsync(_buffer, remaining);
 					await output.WriteAsync(_buffer, 0, remaining);
 					this.OnReadProgress(100);
 				}
@@ -114,12 +115,12 @@ namespace iFSA.Service
 			}
 		}
 
-		private async Task ReadDataAsync(Stream stream, byte[] buffer, int count)
+		private async Task ReadDataAsync(byte[] buffer, int count)
 		{
 			var offset = 0;
 
 			int readBytes;
-			while ((readBytes = await stream.ReadAsync(buffer, offset, count)) != 0)
+			while ((readBytes = await _stream.ReadAsync(buffer, offset, count)) != 0)
 			{
 				count -= readBytes;
 				if (count == 0)

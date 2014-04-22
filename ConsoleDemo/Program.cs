@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using iFSA.Service;
@@ -24,8 +25,8 @@ namespace ConsoleDemo
 				try
 				{
 					var s = new Server(IPAddress.Parse(hostname), port);
-					await s.Register(new UpdateServerHandler(1));
-					await s.Register(new LogsServerHandler(2));
+					await s.RegisterAsync(new UpdateServerHandler(1));
+					await s.RegisterAsync(new LogsServerHandler(2));
 					await s.StartAsync();
 				}
 				catch (Exception ex)
@@ -34,13 +35,12 @@ namespace ConsoleDemo
 				}
 			});
 
+
 			Thread.Sleep(100);
 			UploadPackage(hostname, port);
 
-			
-
-			//Thread.Sleep(100);
-			//DisplayLogConfigs(hostname, port);
+			Thread.Sleep(100);
+			DisplayLogConfigs(hostname, port);
 
 			//Thread.Sleep(100);
 			//ConfigureLogFolders(hostname, port);
@@ -185,8 +185,17 @@ namespace ConsoleDemo
 		{
 			Console.WriteLine(@"Upload package");
 
-			using (var handler = new UpdateClientHandler(1, hostname, port))
+			using (var client = new TcpClient(hostname, port))
 			{
+				var handler = new TransferHandler(client.GetStream());
+
+				var updateHandler = new UpdateClientHandler(1, handler);
+				var logsHandler = new LogsClientHandler(2, handler);
+
+				var tmp = logsHandler.GetConfigsAsync().Result;
+
+				Console.WriteLine(tmp.Length);
+
 				//handler.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
 				//handler.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
 
@@ -203,41 +212,46 @@ namespace ConsoleDemo
 				//		new DirectoryInfo(@"C:\temp\Logs").GetFiles(@"*.txt").Select(f => new ClientFile(f)).ToArray()).Wait();
 				//}
 
-				handler.UploadPackageAsync(
+				updateHandler.UploadPackageAsync(
 					new RequestPackage(new RequestHeader(ClientPlatform.WinRT, new Version(2, 2, 2, 2), string.Empty, string.Empty),
 						new byte[] { 1, 2, 3, 4, 5 })).Wait();
+
+				handler.CloseAsync().Wait();
 			}
 		}
 
 
-		private static void UploadData(string hostname, int port)
-		{
-			Console.WriteLine(@"Upload data");
-			using (var handler = new LogsClientHandler(2, hostname, port))
-			{
-				//handler.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
-				//handler.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
+		//private static void UploadData(string hostname, int port)
+		//{
+		//	Console.WriteLine(@"Upload data");
+		//	using (var handler = new LogsClientHandler(2, hostname, port))
+		//	{
+		//		//handler.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
+		//		//handler.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
 
-				//handler.PackageHelper.FileProgress += (sender, _) => Console.WriteLine(@"Packing file ..." + _);
-				//handler.PackageHelper.PercentProgress += (sender, _) => Console.WriteLine(@"Pack progress " + _.ToString(@"F2") + "%");
+		//		//handler.PackageHelper.FileProgress += (sender, _) => Console.WriteLine(@"Packing file ..." + _);
+		//		//handler.PackageHelper.PercentProgress += (sender, _) => Console.WriteLine(@"Pack progress " + _.ToString(@"F2") + "%");
 
-				foreach (var platform in GetConfigs().Select(c => c.Item1).Distinct())
-				{
-					handler.UploadDatabaseAsync(new RequestHeader(platform, RequestHeader.EmptyVersion, @"PPetrov", @"secret"),
-						new ClientFile(new FileInfo(@"C:\Users\bg900343\Desktop\ifsa.sqlite"))).Wait();
-					handler.UploadFilesAsync(new RequestHeader(platform, RequestHeader.EmptyVersion, @"PPetrov", @"secret"),
-						new[] { new ClientFile(new FileInfo(@"C:\temp\Schedule.png")) }).Wait();
-					handler.UploadLogsAsync(new RequestHeader(platform, RequestHeader.EmptyVersion, @"PPetrov", @"secret"),
-						new DirectoryInfo(@"C:\temp\Logs").GetFiles(@"*.txt").Select(f => new ClientFile(f)).ToArray()).Wait();
-				}
-			}
-		}
+		//		foreach (var platform in GetConfigs().Select(c => c.Item1).Distinct())
+		//		{
+		//			handler.UploadDatabaseAsync(new RequestHeader(platform, RequestHeader.EmptyVersion, @"PPetrov", @"secret"),
+		//				new ClientFile(new FileInfo(@"C:\Users\bg900343\Desktop\ifsa.sqlite"))).Wait();
+		//			handler.UploadFilesAsync(new RequestHeader(platform, RequestHeader.EmptyVersion, @"PPetrov", @"secret"),
+		//				new[] { new ClientFile(new FileInfo(@"C:\temp\Schedule.png")) }).Wait();
+		//			handler.UploadLogsAsync(new RequestHeader(platform, RequestHeader.EmptyVersion, @"PPetrov", @"secret"),
+		//				new DirectoryInfo(@"C:\temp\Logs").GetFiles(@"*.txt").Select(f => new ClientFile(f)).ToArray()).Wait();
+		//		}
+		//	}
+		//}
 
 		private static void DisplayLogConfigs(string hostname, int port)
 		{
 			Console.WriteLine(@"Get log configs");
-			using (var handler = new LogsClientHandler(2, hostname, port))
+
+			using (var tcp = new TcpClient(hostname, port))
 			{
+				var handler = new LogsClientHandler(2, new TransferHandler(tcp.GetStream()));
+
 				//handler.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
 				//handler.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
 
@@ -254,24 +268,24 @@ namespace ConsoleDemo
 			}
 		}
 
-		private static void ConfigureLogFolders(string hostname, int port)
-		{
-			Console.WriteLine(@"Configure log folders");
+		//private static void ConfigureLogFolders(string hostname, int port)
+		//{
+		//	Console.WriteLine(@"Configure log folders");
 
-			using (var handler = new LogsClientHandler(2, hostname, port))
-			{
-				//handler.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
-				//handler.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
+		//	using (var handler = new LogsClientHandler(2, hostname, port))
+		//	{
+		//		//handler.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
+		//		//handler.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
 
-				foreach (var cfg in GetConfigs())
-				{
-					var platform = cfg.Item1;
-					var method = cfg.Item2;
-					var folder = Path.Combine(Path.Combine(@"C:\Temp\Server", platform.ToString()), method.ToString().Replace(@"Configure", string.Empty));
-					handler.ConfigureAsync(new LogConfig(new RequestHeader(platform, RequestHeader.EmptyVersion, "", ""), method, folder)).Wait();
-				}
-			}
-		}
+		//		foreach (var cfg in GetConfigs())
+		//		{
+		//			var platform = cfg.Item1;
+		//			var method = cfg.Item2;
+		//			var folder = Path.Combine(Path.Combine(@"C:\Temp\Server", platform.ToString()), method.ToString().Replace(@"Configure", string.Empty));
+		//			handler.ConfigureAsync(new LogConfig(new RequestHeader(platform, RequestHeader.EmptyVersion, "", ""), method, folder)).Wait();
+		//		}
+		//	}
+		//}
 
 		public static IEnumerable<Tuple<ClientPlatform, LogMethod>> GetConfigs()
 		{
