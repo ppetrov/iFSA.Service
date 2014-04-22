@@ -22,7 +22,7 @@ namespace iFSA.Service
 			_listener = new TcpListener(address, port);
 		}
 
-		public async Task Register(ServerHandlerBase handler)
+		public async Task RegisterAsync(ServerHandlerBase handler)
 		{
 			if (handler == null) throw new ArgumentNullException("handler");
 
