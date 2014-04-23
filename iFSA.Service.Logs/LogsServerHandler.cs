@@ -68,33 +68,41 @@ namespace iFSA.Service.Logs
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
-			var h = new TransferHandler(stream);
-			var method = (LogMethod)methodId;
-			switch (method)
+			var buffer = MemoryPool.Get16KBuffer();
+			try
 			{
-				case LogMethod.GetConfigs:
-					await this.GetConfigsAsync(h, method);
-					break;
-				case LogMethod.ConfigureLogs:
-					await this.ConfigureLogsAsync(h, method);
-					break;
-				case LogMethod.ConfigureFiles:
-					await this.ConfigureFilesAsync(h, method);
-					break;
-				case LogMethod.ConfigureDatabase:
-					await this.ConfigureDatabaseAsync(h, method);
-					break;
-				case LogMethod.UploadLogs:
-					await this.UploadLogsAsync(h, method);
-					break;
-				case LogMethod.UploadFiles:
-					await this.UploadFilesAsync(h, method);
-					break;
-				case LogMethod.UploadDatabase:
-					await this.UploadDatabaseAsync(h, method);
-					break;
-				default:
-					throw new ArgumentOutOfRangeException();
+				var h = new TransferHandler(stream, buffer);
+				var method = (LogMethod)methodId;
+				switch (method)
+				{
+					case LogMethod.GetConfigs:
+						await this.GetConfigsAsync(h, method);
+						break;
+					case LogMethod.ConfigureLogs:
+						await this.ConfigureLogsAsync(h, method);
+						break;
+					case LogMethod.ConfigureFiles:
+						await this.ConfigureFilesAsync(h, method);
+						break;
+					case LogMethod.ConfigureDatabase:
+						await this.ConfigureDatabaseAsync(h, method);
+						break;
+					case LogMethod.UploadLogs:
+						await this.UploadLogsAsync(h, method);
+						break;
+					case LogMethod.UploadFiles:
+						await this.UploadFilesAsync(h, method);
+						break;
+					case LogMethod.UploadDatabase:
+						await this.UploadDatabaseAsync(h, method);
+						break;
+					default:
+						throw new ArgumentOutOfRangeException();
+				}
+			}
+			finally
+			{
+				MemoryPool.Return16KBuffer(buffer);
 			}
 		}
 
@@ -193,8 +201,16 @@ namespace iFSA.Service.Logs
 					{
 						userFolder.Create();
 					}
-					await new PackageHelper(new byte[80 * 1024]).UnpackAsync(ms, userFolder, append);
-					success = true;
+					var buffer = MemoryPool.Get80KBuffer();
+					try
+					{
+						await new PackageHelper(buffer).UnpackAsync(ms, userFolder, append);
+						success = true;
+					}
+					finally
+					{
+						MemoryPool.Return80KBuffer(buffer);
+					}
 				}
 			}
 

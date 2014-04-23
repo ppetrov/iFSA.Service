@@ -36,6 +36,15 @@ namespace ConsoleDemo
 			});
 
 
+			while (true)
+			{
+				Thread.Sleep(100);
+				UploadPackage(hostname, port);
+
+				Thread.Sleep(100);
+				DisplayLogConfigs(hostname, port);
+
+			}
 			Thread.Sleep(100);
 			UploadPackage(hostname, port);
 
@@ -187,7 +196,7 @@ namespace ConsoleDemo
 
 			using (var client = new TcpClient(hostname, port))
 			{
-				var handler = new TransferHandler(client.GetStream());
+				var handler = new TransferHandler(client.GetStream(), new byte[16 * 1024]);
 
 				var updateHandler = new UpdateClientHandler(1, handler);
 				var logsHandler = new LogsClientHandler(2, handler);
@@ -250,20 +259,20 @@ namespace ConsoleDemo
 
 			using (var tcp = new TcpClient(hostname, port))
 			{
-				var handler = new LogsClientHandler(2, new TransferHandler(tcp.GetStream()));
+				var handler = new LogsClientHandler(2, new TransferHandler(tcp.GetStream(), new byte[16 * 1024]));
 
 				//handler.TransferHandler.WriteProgress += (sender, _) => Console.WriteLine("Uploading ... " + _.ToString(@"F2") + "%");
 				//handler.TransferHandler.ReadProgress += (sender, _) => Console.WriteLine("Downloading ... " + _.ToString(@"F2") + "%");
 
+				//var configs = handler.GetConfigsAsync().Result;
+				//foreach (var cfg in configs)
+				//{
+				//	Console.WriteLine(
+				//		cfg.RequestHeader.ClientPlatform.ToString().PadRight(15) + " " +
+				//		cfg.LogMethod.ToString().PadRight(15) + " " +
+				//		cfg.Folder);
+				//}
 				var configs = handler.GetConfigsAsync().Result;
-				foreach (var cfg in configs)
-				{
-					Console.WriteLine(
-						cfg.RequestHeader.ClientPlatform.ToString().PadRight(15) + " " +
-						cfg.LogMethod.ToString().PadRight(15) + " " +
-						cfg.Folder);
-				}
-				configs = handler.GetConfigsAsync().Result;
 				Console.WriteLine(configs.Length);
 			}
 		}

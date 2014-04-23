@@ -57,23 +57,31 @@ namespace iFSA.Service.Update
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
 
-			var h = new TransferHandler(stream);
-			switch ((UpdateMethod)methodId)
+			var buffer = MemoryPool.Get16KBuffer();
+			try
 			{
-				case UpdateMethod.GetVersion:
-					await this.GetVersionAsync(h);
-					break;
-				case UpdateMethod.GetVersions:
-					await this.GetVersionsAsync(h);
-					break;
-				case UpdateMethod.UploadPackage:
-					await this.UploadPackageAsync(h);
-					break;
-				case UpdateMethod.DownloadPackage:
-					await this.DownloadPackageAsync(h);
-					break;
-				default:
-					throw new ArgumentOutOfRangeException();
+				var h = new TransferHandler(stream, buffer);
+				switch ((UpdateMethod)methodId)
+				{
+					case UpdateMethod.GetVersion:
+						await this.GetVersionAsync(h);
+						break;
+					case UpdateMethod.GetVersions:
+						await this.GetVersionsAsync(h);
+						break;
+					case UpdateMethod.UploadPackage:
+						await this.UploadPackageAsync(h);
+						break;
+					case UpdateMethod.DownloadPackage:
+						await this.DownloadPackageAsync(h);
+						break;
+					default:
+						throw new ArgumentOutOfRangeException();
+				}
+			}
+			finally
+			{
+				MemoryPool.Return16KBuffer(buffer);
 			}
 		}
 

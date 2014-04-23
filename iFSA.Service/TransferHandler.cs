@@ -9,7 +9,7 @@ namespace iFSA.Service
 		public static readonly byte[] NoDataBytes = { 255, 255, 255, 255 };
 
 		private readonly Stream _stream;
-		private readonly byte[] _buffer = new byte[16 * 1024];
+		private readonly byte[] _buffer;
 
 		public event EventHandler<decimal> WriteProgress;
 		private void OnWriteProgress(decimal e)
@@ -25,11 +25,14 @@ namespace iFSA.Service
 			if (handler != null) handler(this, e);
 		}
 
-		public TransferHandler(Stream stream)
+		public TransferHandler(Stream stream, byte[] buffer)
 		{
 			if (stream == null) throw new ArgumentNullException("stream");
+			if (buffer == null) throw new ArgumentNullException("buffer");
+			if (buffer.Length == 0) throw new ArgumentOutOfRangeException("buffer");
 
 			_stream = stream;
+			_buffer = buffer;
 		}
 
 		public async Task WriteAsync(byte handlerId, byte methodId)
