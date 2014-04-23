@@ -52,8 +52,10 @@ namespace iFSA.Service
 					var size = Convert.ToInt32(file.Length);
 					output.Capacity += size;
 
-					var fileBytes = await this.ReadFileAsync(file, size);
-					await output.WriteAsync(fileBytes, 0, fileBytes.Length);
+					using (var fs = file.OpenRead())
+					{
+						await CopyAsync(fs, output, size);
+					}
 
 					if (header.Length > 0)
 					{
@@ -100,21 +102,6 @@ namespace iFSA.Service
 					await CopyAsync(input, output, size);
 				}
 			}
-		}
-
-		private async Task<byte[]> ReadFileAsync(FileInfo file, int size)
-		{
-			var buffer = new byte[size];
-
-			using (var output = new MemoryStream(buffer))
-			{
-				using (var input = file.OpenRead())
-				{
-					await CopyAsync(input, output, size);
-				}
-			}
-
-			return buffer;
 		}
 
 		private async Task CopyAsync(Stream input, Stream output, int size)

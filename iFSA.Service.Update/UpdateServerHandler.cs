@@ -1,10 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using iFSA.Service;
-using iFSA.Service.Update;
 
-namespace iFSA.Update
+namespace iFSA.Service.Update
 {
 	public sealed class UpdateServerHandler : ServerHandlerBase
 	{
@@ -109,7 +107,7 @@ namespace iFSA.Update
 					{
 						var buffer = v.Header.NetworkBuffer;
 						ms.Capacity += buffer.Length;
-						ms.Write(buffer, 0, buffer.Length);
+						await ms.WriteAsync(buffer, 0, buffer.Length);
 					}
 				}
 				if (ms.Length != 0)
@@ -132,7 +130,7 @@ namespace iFSA.Update
 			{
 				var header = new RequestHeader().Setup(ms);
 				var packageBytes = new byte[ms.Length - ms.Position];
-				ms.Read(packageBytes, 0, packageBytes.Length);
+				await ms.ReadAsync(packageBytes, 0, packageBytes.Length);
 
 				var package = new RequestPackage(header, packageBytes);
 				_packages[(int)package.Header.ClientPlatform] = package;

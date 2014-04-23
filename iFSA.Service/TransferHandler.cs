@@ -46,11 +46,7 @@ namespace iFSA.Service
 
 			this.OnWriteProgress(0);
 
-#if ASYNC
 			data = await new CompressionHelper(_buffer).CompressAsync(data);
-#else
-			data = await Task.Run(() => new CompressionHelper(_buffer).Compress(input)).ConfigureAwait(false);
-#endif
 
 			// Write size
 			var totalBytes = data.Length;
@@ -105,13 +101,7 @@ namespace iFSA.Service
 					await output.WriteAsync(_buffer, 0, remaining);
 					this.OnReadProgress(100);
 				}
-				var input = output.GetBuffer();
-
-#if ASYNC
-				return await new CompressionHelper(_buffer).DecompressAsync(input);
-#else
-				return await Task.Run(() => new CompressionHelper(_buffer).Decompress(input)).ConfigureAwait(false);
-#endif
+				return await new CompressionHelper(_buffer).DecompressAsync(output.GetBuffer());
 			}
 		}
 
