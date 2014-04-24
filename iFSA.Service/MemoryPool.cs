@@ -68,6 +68,7 @@ namespace iFSA.Service
 		public static void Return80KBuffer(byte[] buffer)
 		{
 			if (buffer == null) throw new ArgumentNullException("buffer");
+			if (buffer.Length != Size80K) throw new ArgumentOutOfRangeException("buffer");
 
 			lock (Sync)
 			{

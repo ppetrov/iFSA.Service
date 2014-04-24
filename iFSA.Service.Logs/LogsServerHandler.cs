@@ -12,6 +12,7 @@ namespace iFSA.Service.Logs
 		private static readonly byte[] ZeroBytes = { 0, 0, 0, 0 };
 		private static readonly byte[] OneBytes = { 1, 0, 0, 0 };
 
+		private readonly string[] _contexts;
 		private readonly string[] _dbFolders = new string[Server.SupportedPlatforms];
 		private readonly string[] _logFolders = new string[Server.SupportedPlatforms];
 		private readonly string[] _filesFolders = new string[Server.SupportedPlatforms];
@@ -19,6 +20,8 @@ namespace iFSA.Service.Logs
 		public LogsServerHandler(byte id)
 			: base(id)
 		{
+			_contexts = Enum.GetNames(typeof (LogMethod));
+
 			for (var i = 0; i < Server.SupportedPlatforms; i++)
 			{
 				_dbFolders[i] = string.Empty;
@@ -40,7 +43,6 @@ namespace iFSA.Service.Logs
 				using (var sr = new StreamReader(ConfigName))
 				{
 					var index = 0;
-
 					string line;
 					while ((line = await sr.ReadLineAsync()) != null)
 					{
@@ -115,7 +117,7 @@ namespace iFSA.Service.Logs
 				this.Write(ms, _filesFolders, LogMethod.UploadFiles);
 
 				var data = ms.ToArray();
-				this.LogResponse(data, method.ToString());
+				this.LogResponse(data, _contexts[(int) method]);
 				await handler.WriteAsync(data);
 			}
 		}
@@ -123,7 +125,7 @@ namespace iFSA.Service.Logs
 		private async Task ConfigureLogsAsync(TransferHandler handler, LogMethod method)
 		{
 			var data = await handler.ReadDataAsync();
-			this.LogRequest(data, method.ToString());
+			this.LogRequest(data, _contexts[(int) method]);
 			await this.ConfigureAsync(data, method);
 		}
 
@@ -140,27 +142,27 @@ namespace iFSA.Service.Logs
 		private async Task UploadLogsAsync(TransferHandler handler, LogMethod method)
 		{
 			var data = await UploadAsync(await handler.ReadDataAsync(), _logFolders, method, true);
-			this.LogResponse(data, method.ToString());
+			this.LogResponse(data, _contexts[(int) method]);
 			await handler.WriteAsync(data);
 		}
 
 		private async Task UploadFilesAsync(TransferHandler handler, LogMethod method)
 		{
 			var data = await UploadAsync(await handler.ReadDataAsync(), _filesFolders, method, false);
-			this.LogResponse(data, method.ToString());
+			this.LogResponse(data, _contexts[(int)method]);
 			await handler.WriteAsync(data);
 		}
 
 		private async Task UploadDatabaseAsync(TransferHandler handler, LogMethod method)
 		{
 			var data = await UploadAsync(await handler.ReadDataAsync(), _dbFolders, method, false);
-			this.LogResponse(data, method.ToString());
+			this.LogResponse(data, _contexts[(int)method]);
 			await handler.WriteAsync(data);
 		}
 
 		private async Task ConfigureAsync(byte[] data, LogMethod method)
 		{
-			this.LogResponse(data, method.ToString());
+			this.LogResponse(data, _contexts[(int) method]);
 
 			using (var ms = new MemoryStream(data))
 			{
@@ -186,7 +188,7 @@ namespace iFSA.Service.Logs
 
 		private async Task<byte[]> UploadAsync(byte[] data, string[] folders, LogMethod method, bool append)
 		{
-			this.LogRequest(data, method.ToString());
+			this.LogRequest(data, _contexts[(int) method]);
 
 			var success = false;
 

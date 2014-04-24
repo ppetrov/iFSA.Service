@@ -36,20 +36,33 @@ namespace ConsoleDemo
 			});
 
 
-			while (true)
+			var limit = 10;
+			Console.WriteLine(@"Upload package");
+
+			using (var client = new TcpClient(hostname, port))
 			{
-				Thread.Sleep(100);
-				UploadPackage(hostname, port);
+				var package = new RequestPackage(new RequestHeader(ClientPlatform.WinRT, new Version(2, 2, 2, 2), string.Empty, string.Empty), new byte[] { 1, 2, 3, 4, 5 });
 
-				Thread.Sleep(100);
-				DisplayLogConfigs(hostname, port);
+				var handler = new TransferHandler(client.GetStream(), new byte[16 * 1024]);
+				var updateHandler = new UpdateClientHandler(1, handler);
+				var logsHandler = new LogsClientHandler(2, handler);
 
+				for (var i = 0; i < limit; i++)
+				{
+					updateHandler.UploadPackageAsync(package).Wait();
+					var tmp = logsHandler.GetConfigsAsync().Result;
+				}
+
+				handler.CloseAsync().Wait();
 			}
-			Thread.Sleep(100);
-			UploadPackage(hostname, port);
+			Console.WriteLine(@"Done");
 
-			Thread.Sleep(100);
-			DisplayLogConfigs(hostname, port);
+
+			//Thread.Sleep(100);
+			//UploadPackage(hostname, port);
+
+			//Thread.Sleep(100);
+			//DisplayLogConfigs(hostname, port);
 
 			//Thread.Sleep(100);
 			//ConfigureLogFolders(hostname, port);
