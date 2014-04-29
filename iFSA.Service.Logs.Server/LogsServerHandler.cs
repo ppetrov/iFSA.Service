@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using iFSA.Service.Core;
@@ -14,21 +13,20 @@ namespace iFSA.Service.Logs.Server
 		private static readonly byte[] ZeroBytes = { 0, 0, 0, 0 };
 		private static readonly byte[] OneBytes = { 1, 0, 0, 0 };
 
+		private static readonly int Categories = Enum.GetValues(typeof(LogCategory)).Length;
+		private static readonly int Platforms = Enum.GetValues(typeof(ClientPlatform)).Length;
+
 		private readonly string[] _contexts;
-		private readonly string[] _dbFolders = new string[Constants.SupportedPlatforms];
-		private readonly string[] _logFolders = new string[Constants.SupportedPlatforms];
-		private readonly string[] _filesFolders = new string[Constants.SupportedPlatforms];
+		private readonly string[] _folders = new string[Categories * Platforms];
 
 		public LogsServerHandler(byte id)
 			: base(id)
 		{
 			_contexts = Enum.GetNames(typeof(LogMethod));
 
-			for (var i = 0; i < Constants.SupportedPlatforms; i++)
+			for (var i = 0; i < _folders.Length; i++)
 			{
-				_dbFolders[i] = string.Empty;
-				_logFolders[i] = string.Empty;
-				_filesFolders[i] = string.Empty;
+				_folders[i] = string.Empty;
 			}
 		}
 
@@ -36,33 +34,14 @@ namespace iFSA.Service.Logs.Server
 		{
 			try
 			{
-				var folders = new string[3 * Constants.SupportedPlatforms];
-				for (var i = 0; i < folders.Length; i++)
-				{
-					folders[i] = string.Empty;
-				}
-
+				var index = 0;
 				using (var sr = new StreamReader(ConfigName))
 				{
-					var index = 0;
 					string line;
 					while ((line = await sr.ReadLineAsync()) != null)
 					{
-						if (index < folders.Length)
-						{
-							folders[index++] = line;
-						}
+						_folders[index++] = line;
 					}
-				}
-
-				var offset = 0;
-				foreach (var f in new[] { _dbFolders, _logFolders, _filesFolders })
-				{
-					for (var i = 0; i < f.Length; i++)
-					{
-						f[i] = folders[i + offset];
-					}
-					offset += Constants.SupportedPlatforms;
 				}
 			}
 			catch (FileNotFoundException) { }
@@ -83,22 +62,22 @@ namespace iFSA.Service.Logs.Server
 						await this.GetConfigsAsync(h, method);
 						break;
 					case LogMethod.ConfigureLogs:
-						await this.ConfigureLogsAsync(h, method);
+						await this.ConfigureAsync(h, LogCategory.Logs);
 						break;
 					case LogMethod.ConfigureFiles:
-						await this.ConfigureFilesAsync(h, method);
+						await this.ConfigureAsync(h, LogCategory.Files);
 						break;
 					case LogMethod.ConfigureDatabase:
-						await this.ConfigureDatabaseAsync(h, method);
+						await this.ConfigureAsync(h, LogCategory.Database);
 						break;
 					case LogMethod.UploadLogs:
-						await this.UploadLogsAsync(h, method);
+						await this.UploadAsync(h, LogCategory.Logs, true);
 						break;
 					case LogMethod.UploadFiles:
-						await this.UploadFilesAsync(h, method);
+						await this.UploadAsync(h, LogCategory.Files);
 						break;
 					case LogMethod.UploadDatabase:
-						await this.UploadDatabaseAsync(h, method);
+						await this.UploadAsync(h, LogCategory.Database);
 						break;
 					default:
 						throw new ArgumentOutOfRangeException();
@@ -114,9 +93,16 @@ namespace iFSA.Service.Logs.Server
 		{
 			using (var ms = new MemoryStream())
 			{
-				this.Write(ms, _dbFolders, LogMethod.UploadDatabase);
-				this.Write(ms, _logFolders, LogMethod.UploadLogs);
-				this.Write(ms, _filesFolders, LogMethod.UploadFiles);
+				for (var i = 0; i < _folders.Length; i++)
+				{
+					var folder = _folders[i];
+					var platform = (ClientPlatform)(i / Categories);
+					var category = (LogCategory)(i % Platforms);
+
+					var config = new LogConfig(new RequestHeader(platform, RequestHeader.EmptyVersion, string.Empty, string.Empty), category, folder);
+					var buffer = config.NetworkBuffer;
+					ms.Write(buffer, 0, buffer.Length);
+				}
 
 				var data = ms.ToArray();
 				this.LogResponse(data, _contexts[(int)method]);
@@ -124,81 +110,29 @@ namespace iFSA.Service.Logs.Server
 			}
 		}
 
-		private async Task ConfigureLogsAsync(ITransferHandler handler, LogMethod method)
+		private async Task ConfigureAsync(ITransferHandler handler, LogCategory category)
 		{
-			var data = await handler.ReadAsync();
-			this.LogRequest(data, _contexts[(int)method]);
-			await this.ConfigureAsync(data, method);
-		}
-
-		private async Task ConfigureFilesAsync(ITransferHandler handler, LogMethod method)
-		{
-			await this.ConfigureAsync(await handler.ReadAsync(), method);
-		}
-
-		private async Task ConfigureDatabaseAsync(ITransferHandler handler, LogMethod method)
-		{
-			await this.ConfigureAsync(await handler.ReadAsync(), method);
-		}
-
-		private async Task UploadLogsAsync(ITransferHandler handler, LogMethod method)
-		{
-			var data = await UploadAsync(await handler.ReadAsync(), _logFolders, method, true);
-			this.LogResponse(data, _contexts[(int)method]);
-			await handler.WriteAsync(data);
-		}
-
-		private async Task UploadFilesAsync(ITransferHandler handler, LogMethod method)
-		{
-			var data = await UploadAsync(await handler.ReadAsync(), _filesFolders, method, false);
-			this.LogResponse(data, _contexts[(int)method]);
-			await handler.WriteAsync(data);
-		}
-
-		private async Task UploadDatabaseAsync(ITransferHandler handler, LogMethod method)
-		{
-			var data = await UploadAsync(await handler.ReadAsync(), _dbFolders, method, false);
-			this.LogResponse(data, _contexts[(int)method]);
-			await handler.WriteAsync(data);
-		}
-
-		private async Task ConfigureAsync(byte[] data, LogMethod method)
-		{
-			this.LogResponse(data, _contexts[(int)method]);
-
-			using (var ms = new MemoryStream(data))
+			using (var ms = new MemoryStream(await handler.ReadAsync()))
 			{
 				var logConfig = new LogConfig().Setup(ms);
-				string[] folders = null;
-				switch (method)
+				_folders[FolderIndex(logConfig.RequestHeader.ClientPlatform, category)] = logConfig.Folder;
+			}
+			using (var sw = new StreamWriter(ConfigName))
+			{
+				foreach (var folder in _folders)
 				{
-					case LogMethod.ConfigureLogs:
-						folders = _logFolders;
-						break;
-					case LogMethod.ConfigureFiles:
-						folders = _filesFolders;
-						break;
-					case LogMethod.ConfigureDatabase:
-						folders = _dbFolders;
-						break;
+					await sw.WriteLineAsync(folder);
 				}
-				folders[(int)logConfig.RequestHeader.ClientPlatform] = logConfig.Folder;
-
-				await this.SaveFoldersAsync();
 			}
 		}
 
-		private async Task<byte[]> UploadAsync(byte[] data, string[] folders, LogMethod method, bool append)
+		private async Task<byte[]> UploadAsync(ITransferHandler handler, LogCategory category, bool append = false)
 		{
-			this.LogRequest(data, _contexts[(int)method]);
-
-			var success = false;
-
-			using (var ms = new MemoryStream(data))
+			using (var ms = new MemoryStream(await handler.ReadAsync()))
 			{
 				var header = new RequestHeader().Setup(ms);
-				var folder = folders[(int)header.ClientPlatform];
-				if (folder != null)
+				var folder = _folders[FolderIndex(header.ClientPlatform, category)];
+				if (folder != string.Empty)
 				{
 					var userFolder = new DirectoryInfo(Path.Combine(folder, header.Username));
 					if (!userFolder.Exists)
@@ -209,7 +143,7 @@ namespace iFSA.Service.Logs.Server
 					try
 					{
 						await new ServerPackageHelper(buffer).UnpackAsync(ms, userFolder, append);
-						success = true;
+						return OneBytes;
 					}
 					finally
 					{
@@ -218,29 +152,12 @@ namespace iFSA.Service.Logs.Server
 				}
 			}
 
-			return success ? OneBytes : ZeroBytes;
+			return ZeroBytes;
 		}
 
-		private async Task SaveFoldersAsync()
+		private static int FolderIndex(ClientPlatform platform, LogCategory category)
 		{
-			using (var sw = new StreamWriter(ConfigName))
-			{
-				foreach (var folders in new[] { _dbFolders, _logFolders, _filesFolders })
-				{
-					foreach (var folder in folders)
-					{
-						await sw.WriteLineAsync(folder);
-					}
-				}
-			}
-		}
-
-		private void Write(Stream stream, IList<string> folders, LogMethod method)
-		{
-			for (var i = 0; i < folders.Count; i++)
-			{
-				NetworkHelper.WriteRaw(stream, new LogConfig(new RequestHeader((ClientPlatform)i, RequestHeader.EmptyVersion, string.Empty, string.Empty), method, folders[i] ?? string.Empty).NetworkBuffer);
-			}
+			return ((int)platform * Categories) + (int)category;
 		}
 	}
 }

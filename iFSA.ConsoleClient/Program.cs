@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Net.Sockets;
+using iFSA.Service;
 using iFSA.Service.Core;
 using iFSA.Service.Logs.Client;
 
@@ -9,31 +12,23 @@ namespace iFSA.ConsoleClient
 	{
 		static void Main(string[] args)
 		{
-			var v = 0;
-			var limit = 10;
-
+			Console.ReadLine();
+			Console.WriteLine(@"Upload video");
 			using (var client = new TcpClient(@"127.0.0.1", 11111))
 			{
-				//var package = new RequestPackage(new RequestHeader(ClientPlatform.WinRT, new Version(2, 2, 2, 2), string.Empty, string.Empty), new byte[] { 1, 2, 3, 4, 5 });
-
 				var handler = new TransferHandler(client.GetStream(), new byte[16 * 1024]);
-				//var updateHandler = new UpdateClientHandler(1, handler);
-				var logsHandler = new LogsClientHandler(2, handler);
 
-				for (var i = 0; i < limit; i++)
-				{
-					//updateHandler.UploadPackageAsync(package).Wait();
-					var tmp = logsHandler.GetConfigsAsync().Result;
-					v += tmp.Length;
+				//var config = new LogConfig(new RequestHeader(ClientPlatform.WinMobile, new Version(0, 0, 0, 0), string.Empty, string.Empty), Category.Logs, @"C:\Temp\");
+				//new LogsClientHandler(2, handler).ConfigureAsync(config).Wait();
 
-					logsHandler.ConfigureAsync(new LogConfig(new RequestHeader(ClientPlatform.WinRT, new Version(1, 1, i, 1),
-						string.Empty, string.Empty), LogMethod.ConfigureDatabase, @"C:\temp\db")).Wait();
-				}
+				var path = @"C:\Users\bg900343\Desktop\DEV-B318.wmv";
+				var clientFile = new ClientFile(Path.GetFileName(path), File.ReadAllBytes(path));
+				var requestHeader = new RequestHeader(ClientPlatform.WinMobile, new Version(0, 0, 0, 0), string.Empty, string.Empty);
+				new LogsClientHandler(2, handler).UploadFilesAsync(requestHeader, new List<ClientFile> { clientFile }).Wait();
 
 				handler.CloseAsync().Wait();
 			}
 			Console.WriteLine(@"Done");
-			Console.WriteLine(v);
 			Console.ReadLine();
 		}
 	}

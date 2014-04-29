@@ -7,42 +7,169 @@
     Loaded="DashboardScreenOnLoaded"
     mc:Ignorable="d">
 
+    <Page.Resources>
+        <Style x:Key="FullLineItemStyle" TargetType="ListViewItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+
+        <Style x:Key="RegularTextStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI Symbol"/>
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <Style x:Key="SmallTextStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI Symbol"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <Style x:Key="LogsListView" TargetType="ListView">
+            <Setter Property="Background" Value="#232732"/>
+            <Setter Property="SelectionMode" Value="None"/>
+        </Style>
+
+        <Style x:Key="IconButton" TargetType="Button">
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="Background" Value="#232732"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="FontFamily" Value="Segoe UI Symbol"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <DataTemplate x:Name="LogsDataTemplate">
+            <Grid Background="#45BCD4" Height="120">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                    <ColumnDefinition Width="Auto"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition></RowDefinition>
+                    <RowDefinition></RowDefinition>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Grid.Column="0" RowSpan="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Icon}" Style="{StaticResource RegularTextStyle}"></TextBlock>
+                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Category}" Style="{StaticResource RegularTextStyle}"></TextBlock>
+                    <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding Path}" Style="{StaticResource SmallTextStyle}" Margin="10,0,0,0" HorizontalAlignment="Left" TextWrapping="Wrap"></TextBlock>
+                </Grid>
+
+                <Button Grid.Row="0" Grid.Column="1" Style="{StaticResource IconButton}" Tapped="ConfigureFolderTapped">
+                    <Button.Content>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"></ColumnDefinition>
+                                <ColumnDefinition Width="*"></ColumnDefinition>
+                            </Grid.ColumnDefinitions>
+                            <SymbolIcon Symbol="Setting"/>
+                            <TextBlock Grid.Column="1" Text="Configure" Style="{StaticResource RegularTextStyle}"></TextBlock>
+                        </Grid>
+                    </Button.Content>
+                </Button>
+                <Button Grid.Row="1" Grid.Column="1" Style="{StaticResource IconButton}" Tapped="UploadTapped">
+                    <Button.Content>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"></ColumnDefinition>
+                                <ColumnDefinition Width="*"></ColumnDefinition>
+                            </Grid.ColumnDefinitions>
+                            <SymbolIcon Symbol="Upload"/>
+                            <TextBlock Grid.Column="1" Text="Upload" Style="{StaticResource RegularTextStyle}"></TextBlock>
+                        </Grid>
+                    </Button.Content>
+                </Button>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Name="LogsHeaderTemplate">
+            <Grid Background="#000100">
+                <TextBlock Text="{Binding}" Style="{StaticResource RegularTextStyle}" Height="80" Margin="0,20,0,0"></TextBlock>
+            </Grid>
+        </DataTemplate>
+
+
+    </Page.Resources>
+
     <Grid>
         <Grid.Background>
             <ImageBrush ImageSource="Assets/dandelion.jpg" ></ImageBrush>
         </Grid.Background>
-        <Grid Opacity="0.75" Background="Tan" Margin="75">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"></ColumnDefinition>
-                <ColumnDefinition Width="4*"></ColumnDefinition>
-            </Grid.ColumnDefinitions>
+        <Grid Opacity="0.75" Background="#232732" Margin="50">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"></RowDefinition>
                 <RowDefinition Height="4*"></RowDefinition>
             </Grid.RowDefinitions>
 
             <!--Application Icon & Logo-->
-            <Grid Background="Wheat" Grid.Column="0" Grid.Row="0">
-            </Grid>
-
-            <!--Left Menu-->
-            <StackPanel Grid.Column="0" Grid.Row="1" Orientation="Vertical" Background="LightSlateGray">
-                <TextBlock Text="Modules" Margin="5" FontSize="28" HorizontalAlignment="Center"></TextBlock>
-                <ListView ItemsSource="{Binding Modules}">
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Name}" Margin="5" FontSize="22"></TextBlock>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-            </StackPanel>
-
-            <!--Upper Menu-->
-            <Grid Background="Wheat" Grid.Column="1" Grid.Row="0">
+            <Grid Background="#232732" Grid.Column="0" Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="5" Style="{StaticResource IconButton}" HorizontalAlignment="Right" Margin="20" Tapped="RefreshLogsTapped">
+                    <Button.Content>
+                        <StackPanel Orientation="Vertical">
+                            <SymbolIcon Symbol="Refresh"/>
+                            <TextBlock Text="Refresh" Style="{StaticResource RegularTextStyle}"></TextBlock>
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
             </Grid>
 
             <!--Content-->
-            <Grid Background="Wheat" Grid.Column="1" Grid.Row="1">
+            <Grid Background="#232732" Grid.Column="0" Grid.Row="1" Margin="25">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition Width="10"></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition Width="10"></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+
+                <ListView Grid.Column="0" Header="Windows Mobile" 
+                          HeaderTemplate="{StaticResource LogsHeaderTemplate}"
+                          Style="{StaticResource LogsListView}"
+                          ItemContainerStyle="{StaticResource FullLineItemStyle}" 
+                          ItemTemplate="{StaticResource LogsDataTemplate}"
+                          ItemsSource="{Binding Mobile}">
+                </ListView>
+                <ListView Grid.Column="2" Header="iPad" 
+                          HeaderTemplate="{StaticResource LogsHeaderTemplate}"
+                          Style="{StaticResource LogsListView}"
+                          ItemContainerStyle="{StaticResource FullLineItemStyle}"
+                          ItemTemplate="{StaticResource LogsDataTemplate}"
+                          ItemsSource="{Binding Ipad}">
+                </ListView>
+                <ListView Grid.Column="4" Header="Windows 8" 
+                          HeaderTemplate="{StaticResource LogsHeaderTemplate}"
+                          Style="{StaticResource LogsListView}"
+                          ItemContainerStyle="{StaticResource FullLineItemStyle}" 
+                          ItemTemplate="{StaticResource LogsDataTemplate}"
+                          ItemsSource="{Binding Winrt}">
+                </ListView>
+
             </Grid>
         </Grid>
     </Grid>

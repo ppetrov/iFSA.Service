@@ -30,7 +30,7 @@ namespace iFSA.Service.Core
 			if (y.Length == 0) throw new ArgumentOutOfRangeException("y");
 			if (z.Length == 0) throw new ArgumentOutOfRangeException("z");
 
-			var result = new byte[x.Length + y.Length];
+			var result = new byte[x.Length + y.Length + z.Length];
 
 			var offset = 0;
 			Array.Copy(x, 0, result, offset, x.Length);

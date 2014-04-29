@@ -32,7 +32,7 @@ namespace iFSA.Service.Core
 					{
 						header.Append(FileSeparator);
 					}
-					header.Append(f.Path);
+					header.Append(f.Name);
 					header.Append(SizeSeparator);
 					header.Append(data.Length);
 				}

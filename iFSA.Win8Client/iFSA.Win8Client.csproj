@@ -116,6 +116,7 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="BindableBase.cs" />
     <Compile Include="DashboardScreen.xaml.cs">
       <DependentUpon>DashboardScreen.xaml</DependentUpon>
     </Compile>

@@ -1,18 +1,18 @@
 ﻿using System;
 
-namespace iFSA.Service
+namespace iFSA.Service.Core
 {
 	public sealed class ClientFile
 	{
-		public string Path { get; private set; }
+		public string Name { get; private set; }
 		public byte[] Data { get; private set; }
 
-		public ClientFile(string path, byte[] data)
+		public ClientFile(string name, byte[] data)
 		{
-			if (path == null) throw new ArgumentNullException("path");
+			if (name == null) throw new ArgumentNullException("name");
 			if (data == null) throw new ArgumentNullException("data");
 
-			this.Path = path;
+			this.Name = name;
 			this.Data = data;
 		}
 	}
