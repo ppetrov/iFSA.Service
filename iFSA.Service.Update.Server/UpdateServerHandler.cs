@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using iFSA.Service.Core;
 using iFSA.Service.Update.Client;
@@ -10,18 +11,16 @@ namespace iFSA.Service.Update.Server
 	{
 		public static readonly string ConfigName = @"update.cfg";
 
-		private readonly string[] _contexts;
 		private readonly string[] _paths;
-		private readonly RequestPackage[] _packages = new RequestPackage[Constants.SupportedPlatforms];
+		private readonly RequestPackage[] _packages = new RequestPackage[Enum.GetValues(typeof(ClientPlatform)).Length];
 
 		public UpdateServerHandler(byte id)
 			: base(id)
 		{
-			_contexts = Enum.GetNames(typeof(UpdateMethod));
-			_paths = new string[_contexts.Length];
+			_paths = Enum.GetNames(typeof(ClientPlatform));
 			for (var i = 0; i < _paths.Length; i++)
 			{
-				_paths[i] = _contexts[i] + @".dat";
+				_paths[i] = _paths[i] + @".dat";
 			}
 		}
 
@@ -29,32 +28,18 @@ namespace iFSA.Service.Update.Server
 		{
 			try
 			{
-				var length = _packages.Length;
-				var versions = new string[length];
-				for (var i = 0; i < length; i++)
-				{
-					versions[i] = string.Empty;
-				}
-
+				var index = 0;
 				using (var sr = new StreamReader(ConfigName))
 				{
-					var index = 0;
 					string line;
 					while ((line = await sr.ReadLineAsync()) != null)
 					{
-						if (index < length)
+						var package = default(RequestPackage);
+						if (line != string.Empty)
 						{
-							versions[index++] = line;
+							package = await this.LoadPackageAsync((ClientPlatform)index, line);
 						}
-					}
-				}
-
-				for (var i = 0; i < length; i++)
-				{
-					var version = versions[i];
-					if (version != string.Empty)
-					{
-						_packages[i] = await LoadPackageAsync((ClientPlatform)i, version);
+						_packages[index++] = package;
 					}
 				}
 			}
@@ -69,20 +54,19 @@ namespace iFSA.Service.Update.Server
 			try
 			{
 				var h = new TransferHandler(stream, buffer);
-				var method = (UpdateMethod)methodId;
-				switch (method)
+				switch ((UpdateMethod)methodId)
 				{
 					case UpdateMethod.GetVersion:
-						await this.GetVersionAsync(h, method);
+						await this.GetVersionAsync(h);
 						break;
 					case UpdateMethod.GetVersions:
-						await this.GetVersionsAsync(h, method);
+						await this.GetVersionsAsync(h);
 						break;
 					case UpdateMethod.UploadPackage:
-						await this.UploadPackageAsync(h, method);
+						await this.UploadPackageAsync(h);
 						break;
 					case UpdateMethod.DownloadPackage:
-						await this.DownloadPackageAsync(h, method);
+						await this.DownloadPackageAsync(h);
 						break;
 					default:
 						throw new ArgumentOutOfRangeException();
@@ -94,26 +78,21 @@ namespace iFSA.Service.Update.Server
 			}
 		}
 
-		private async Task GetVersionAsync(ITransferHandler handler, UpdateMethod method)
+		private async Task GetVersionAsync(ITransferHandler handler)
 		{
 			var networkBuffer = Constants.NoDataBytes;
 
-			var context = _contexts[(int)method];
-			var input = await handler.ReadAsync();
-			this.LogRequest(input, context);
-
-			var package = _packages[BitConverter.ToInt32(input, 0)];
+			var data = await handler.ReadAsync();
+			var package = _packages[BitConverter.ToInt32(data, 0)];
 			if (package != null)
 			{
 				networkBuffer = package.Header.NetworkBuffer;
 			}
 
-			var data = networkBuffer;
-			this.LogResponse(data, context);
-			await handler.WriteAsync(data);
+			await handler.WriteAsync(networkBuffer);
 		}
 
-		private async Task GetVersionsAsync(ITransferHandler handler, UpdateMethod method)
+		private async Task GetVersionsAsync(ITransferHandler handler)
 		{
 			var networkBuffer = Constants.NoDataBytes;
 
@@ -134,24 +113,19 @@ namespace iFSA.Service.Update.Server
 						if (p != null)
 						{
 							var buffer = p.Header.NetworkBuffer;
-							await ms.WriteAsync(buffer, 0, buffer.Length);
+							ms.Write(buffer, 0, buffer.Length);
 						}
 					}
 					networkBuffer = ms.GetBuffer();
 				}
 			}
 
-			var data = networkBuffer;
-			this.LogResponse(data, _contexts[(int)method]);
-			await handler.WriteAsync(data);
+			await handler.WriteAsync(networkBuffer);
 		}
 
-		private async Task UploadPackageAsync(ITransferHandler handler, UpdateMethod method)
+		private async Task UploadPackageAsync(ITransferHandler handler)
 		{
-			var input = await handler.ReadAsync();
-			this.LogRequest(input, _contexts[(int)method]);
-
-			using (var ms = new MemoryStream(input))
+			using (var ms = new MemoryStream(await handler.ReadAsync()))
 			{
 				var header = new RequestHeader().Setup(ms);
 				var packageBytes = new byte[ms.Length - ms.Position];
@@ -164,42 +138,37 @@ namespace iFSA.Service.Update.Server
 			}
 		}
 
-		private async Task DownloadPackageAsync(ITransferHandler handler, UpdateMethod method)
+		private async Task DownloadPackageAsync(ITransferHandler handler)
 		{
 			var networkBuffer = Constants.NoDataBytes;
 
-			var input = await handler.ReadAsync();
-			var context = _contexts[(int)method];
-			this.LogRequest(input, context);
-
-			var header = new RequestHeader().Setup(new MemoryStream(input));
+			var header = new RequestHeader().Setup(new MemoryStream(await handler.ReadAsync()));
 			var package = _packages[(int)header.ClientPlatform];
 			if (package != null && package.Header.Version > header.Version)
 			{
 				networkBuffer = package.Data;
 			}
 
-			var data = networkBuffer;
-			this.LogResponse(data, context);
-			await handler.WriteAsync(data);
+			await handler.WriteAsync(networkBuffer);
 		}
 
 		private async Task<RequestPackage> LoadPackageAsync(ClientPlatform platform, string version)
 		{
-			using (var fs = File.OpenRead(_paths[(int)platform]))
+			var file = new FileInfo(_paths[(int)platform]);
+
+			using (var fs = file.OpenRead())
 			{
 				var buffer = MemoryPool.Get80KBuffer();
 				try
 				{
-					using (var ms = new MemoryStream((int)new FileInfo(fs.Name).Length))
+					using (var ms = new MemoryStream((int)file.Length))
 					{
 						int readBytes;
 						while ((readBytes = await fs.ReadAsync(buffer, 0, buffer.Length)) != 0)
 						{
 							await ms.WriteAsync(buffer, 0, readBytes);
 						}
-						return new RequestPackage(new RequestHeader(platform, Version.Parse(version), string.Empty, string.Empty),
-							ms.GetBuffer());
+						return new RequestPackage(new RequestHeader(platform, Version.Parse(version), string.Empty, string.Empty), ms.GetBuffer());
 					}
 				}
 				finally
@@ -236,19 +205,23 @@ namespace iFSA.Service.Update.Server
 
 		private async Task SavePackageConfigAsync()
 		{
+			var buffer = new StringBuilder();
+
+			foreach (var package in _packages)
+			{
+				var version = string.Empty;
+
+				if (package != null)
+				{
+					version = package.Header.Version.ToString();
+				}
+
+				buffer.AppendLine(version);
+			}
+
 			using (var sw = new StreamWriter(ConfigName))
 			{
-				foreach (var package in _packages)
-				{
-					var value = string.Empty;
-
-					if (package != null)
-					{
-						value = package.Header.Version.ToString();
-					}
-
-					await sw.WriteLineAsync(value);
-				}
+				await sw.WriteAsync(buffer.ToString());
 			}
 		}
 	}

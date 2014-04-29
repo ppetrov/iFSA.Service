@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using iFSA.Service.Core;
 using iFSA.Service.Logs.Client;
@@ -16,14 +17,11 @@ namespace iFSA.Service.Logs.Server
 		private static readonly int Categories = Enum.GetValues(typeof(LogCategory)).Length;
 		private static readonly int Platforms = Enum.GetValues(typeof(ClientPlatform)).Length;
 
-		private readonly string[] _contexts;
 		private readonly string[] _folders = new string[Categories * Platforms];
 
 		public LogsServerHandler(byte id)
 			: base(id)
 		{
-			_contexts = Enum.GetNames(typeof(LogMethod));
-
 			for (var i = 0; i < _folders.Length; i++)
 			{
 				_folders[i] = string.Empty;
@@ -55,11 +53,10 @@ namespace iFSA.Service.Logs.Server
 			try
 			{
 				var h = new TransferHandler(stream, buffer);
-				var method = (LogMethod)methodId;
-				switch (method)
+				switch ((LogMethod)methodId)
 				{
 					case LogMethod.GetConfigs:
-						await this.GetConfigsAsync(h, method);
+						await this.GetConfigsAsync(h);
 						break;
 					case LogMethod.ConfigureLogs:
 						await this.ConfigureAsync(h, LogCategory.Logs);
@@ -89,7 +86,7 @@ namespace iFSA.Service.Logs.Server
 			}
 		}
 
-		private async Task GetConfigsAsync(ITransferHandler handler, LogMethod method)
+		private async Task GetConfigsAsync(ITransferHandler handler)
 		{
 			using (var ms = new MemoryStream())
 			{
@@ -104,9 +101,7 @@ namespace iFSA.Service.Logs.Server
 					ms.Write(buffer, 0, buffer.Length);
 				}
 
-				var data = ms.ToArray();
-				this.LogResponse(data, _contexts[(int)method]);
-				await handler.WriteAsync(data);
+				await handler.WriteAsync(ms.ToArray());
 			}
 		}
 
@@ -117,12 +112,15 @@ namespace iFSA.Service.Logs.Server
 				var logConfig = new LogConfig().Setup(ms);
 				_folders[FolderIndex(logConfig.RequestHeader.ClientPlatform, category)] = logConfig.Folder;
 			}
+
+			var buffer = new StringBuilder();
+			foreach (var folder in _folders)
+			{
+				buffer.AppendLine(folder);
+			}
 			using (var sw = new StreamWriter(ConfigName))
 			{
-				foreach (var folder in _folders)
-				{
-					await sw.WriteLineAsync(folder);
-				}
+				await sw.WriteAsync(buffer.ToString());
 			}
 		}
 
