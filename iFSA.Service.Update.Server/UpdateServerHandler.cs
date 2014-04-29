@@ -21,7 +21,7 @@ namespace iFSA.Service.Update.Server
 			_paths = new string[_contexts.Length];
 			for (var i = 0; i < _paths.Length; i++)
 			{
-				_paths[i] = _contexts + @".dat";
+				_paths[i] = _contexts[i] + @".dat";
 			}
 		}
 
