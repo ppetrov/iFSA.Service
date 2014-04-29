@@ -40,6 +40,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LogCategory.cs" />
     <Compile Include="LogConfig.cs" />
     <Compile Include="LogMethod.cs" />
     <Compile Include="LogsClientHandler.cs" />

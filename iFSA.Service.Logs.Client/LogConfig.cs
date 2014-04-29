@@ -7,19 +7,19 @@ namespace iFSA.Service.Logs.Client
 	public sealed class LogConfig : INetworkTransferable<LogConfig>
 	{
 		public RequestHeader RequestHeader { get; private set; }
-		public LogMethod LogMethod { get; private set; }
+		public LogCategory Category { get; private set; }
 		public string Folder { get; private set; }
 		public byte[] NetworkBuffer { get; private set; }
 
 		public LogConfig() { }
 
-		public LogConfig(RequestHeader requestHeader, LogMethod logMethod, string folder)
+		public LogConfig(RequestHeader requestHeader, LogCategory category, string folder)
 		{
 			if (requestHeader == null) throw new ArgumentNullException("requestHeader");
 			if (folder == null) throw new ArgumentNullException("folder");
 
 			this.RequestHeader = requestHeader;
-			this.LogMethod = logMethod;
+			this.Category = category;
 			this.Folder = folder;
 			this.NetworkBuffer = this.GetNetworkBuffer();
 		}
@@ -30,7 +30,7 @@ namespace iFSA.Service.Logs.Client
 
 			var buffer = BitConverter.GetBytes(0);
 			this.RequestHeader = new RequestHeader().Setup(stream);
-			this.LogMethod = (LogMethod)NetworkHelper.ReadInt32(stream, buffer);
+			this.Category = (LogCategory)NetworkHelper.ReadInt32(stream, buffer);
 			this.Folder = NetworkHelper.ReadString(stream, buffer);
 			this.NetworkBuffer = this.GetNetworkBuffer();
 
@@ -40,7 +40,7 @@ namespace iFSA.Service.Logs.Client
 		private byte[] GetNetworkBuffer()
 		{
 			var buffer = this.RequestHeader.NetworkBuffer;
-			var updateMethod = (int)this.LogMethod;
+			var updateMethod = (int)this.Category;
 			var folderBuffer = NetworkHelper.GetBytes(this.Folder);
 
 			using (var ms = new MemoryStream(

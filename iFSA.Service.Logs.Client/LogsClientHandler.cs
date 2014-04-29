@@ -57,8 +57,25 @@ namespace iFSA.Service.Logs.Client
 		{
 			if (logConfig == null) throw new ArgumentNullException("logConfig");
 
-			var method = logConfig.LogMethod;
-			var context = method.ToString();
+			var category = logConfig.Category;
+
+			LogMethod method;
+			switch (category)
+			{
+				case LogCategory.Logs:
+					method = LogMethod.ConfigureLogs;
+					break;
+				case LogCategory.Database:
+					method = LogMethod.ConfigureDatabase;
+					break;
+				case LogCategory.Files:
+					method = LogMethod.ConfigureFiles;
+					break;
+				default:
+					throw new ArgumentOutOfRangeException();
+			}
+
+			var context = category.ToString();
 			this.LogRequest(context);
 			await this.TransferHandler.WriteAsync(this.Id, (byte)method);
 
